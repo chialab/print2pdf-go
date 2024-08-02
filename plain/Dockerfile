@@ -20,6 +20,8 @@ FROM chromedp/headless-shell:stable
 
 WORKDIR /app
 
+ENV CHROMIUM_PATH="/headless-shell/headless-shell"
+
 COPY --from=builder /app/build/print2pdf /app/
 
 ENTRYPOINT ["/app/print2pdf"]

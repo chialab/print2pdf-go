@@ -44,7 +44,8 @@ RUN dnf -y install tar brotli \
 
 ENV FONTCONFIG_PATH="/tmp/fonts" \
     LD_LIBRARY_PATH="/tmp/al2023/lib:/tmp/swiftshader:${LD_LIBRARY_PATH}" \
-    VK_ICD_FILENAMES="/tmp/swiftshader/vk_swiftshader_icd.json"
+    VK_ICD_FILENAMES="/tmp/swiftshader/vk_swiftshader_icd.json" \
+    CHROMIUM_PATH="/tmp/chromium"
 
 COPY --from=builder /app/build/print2pdf /app/
 

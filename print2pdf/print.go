@@ -45,11 +45,17 @@ func NewValidationError(message string) ValidationError {
 	return ValidationError{message}
 }
 
+var ChromiumPath = os.Getenv("CHROMIUM_PATH")
 var browserCtx context.Context
 
 // Allocate a browser to be reused by multiple handler invocations, to reduce startup time.
 func init() {
-	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.ExecPath("/tmp/chromium"))
+	if ChromiumPath == "" {
+		fmt.Fprintln(os.Stderr, "set CHROMIUM_PATH environment variable to configure the path to the Chromium binary")
+		os.Exit(1)
+	}
+
+	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.ExecPath(ChromiumPath))
 	allocatorCtx, allocatorCancel := chromedp.NewExecAllocator(context.Background(), opts...)
 	browserCtx, _ = chromedp.NewContext(allocatorCtx)
 
