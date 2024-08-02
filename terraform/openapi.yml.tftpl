@@ -1,0 +1,152 @@
+openapi: '3.0.0'
+info:
+  title: ${yamlencode(name)}
+  description: ${yamlencode("REST API for ${name}.")}
+  version: '2019-05-19'
+x-amazon-apigateway-request-validators:
+  all:
+    validateRequestBody: yes
+    validateRequestParameters: yes
+paths:
+  /print:
+    post:
+      description: 'Render Web page as PDF.'
+      x-amazon-apigateway-request-validator: 'all'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrintRequest'
+      responses:
+        '200':
+          description: 'PDF generated.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrintResponse'
+        '400':
+          description: 'Client error.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-amazon-apigateway-integration:
+        type: 'aws_proxy'
+        httpMethod: 'POST'
+        uri: ${yamlencode(lambda_invoke_arn)}
+    options:
+      description: 'CORS response.'
+      responses:
+        '200':
+          description: 'OK'
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: 'string'
+            Access-Control-Allow-Methods:
+              schema:
+                type: 'string'
+            Access-Control-Allow-Headers:
+              schema:
+                type: 'string'
+      x-amazon-apigateway-integration:
+        type: 'mock'
+        requestTemplates:
+          application/json: '{"statusCode": 200}'
+        responses:
+          default:
+            statusCode: 200
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type'"
+              method.response.header.Access-Control-Allow-Origin: ${yamlencode("'${cors_allowed_origins}'")}
+  /status:
+    get:
+      description: 'Healthcheck.'
+      responses:
+        '200':
+          description: 'Healthy.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+      x-amazon-apigateway-integration:
+        type: 'mock'
+        httpMethod: 'POST'
+        requestTemplates:
+          application/json: '{ "statusCode": 200 }'
+        responses:
+          '200':
+            statusCode: 200
+            responseTemplates:
+              application/json: '{ "status": true }'
+components:
+  schemas:
+    ErrorResponse:
+      type: 'object'
+      required: [ 'message' ]
+      properties:
+        message:
+          type: 'string'
+      additionalProperties: no
+    PrintRequest:
+      type: 'object'
+      required: [ 'url', 'file_name' ]
+      properties:
+        url:
+          type: 'string'
+          format: 'url'
+        file_name:
+          type: 'string'
+          pattern: '^[a-zA-Z0-9!"#$£%&'()*+,.:;<=>?@\[\] ^_`{|}~-]+$'
+        media:
+          type: 'string'
+          enum: [ 'screen', 'print' ]
+          default: 'print'
+        format:
+          type: 'string'
+          enum: [
+            'Letter', 'Legal', 'Tabload', 'Ledger',
+            'A0', 'A1', 'A2', 'A3', 'A4', 'A5'
+          ]
+          default: 'A4'
+        background:
+          type: 'boolean'
+          default: yes
+        layout:
+          type: 'string'
+          enum: [ 'portrait', 'landscape' ]
+          default: 'portrait'
+        margin:
+          type: 'object'
+          required: [ 'top', 'bottom', 'left', 'right' ]
+          properties:
+            top:
+              type: 'string'
+            bottom:
+              type: 'string'
+            left:
+              type: 'string'
+            right:
+              type: 'string'
+          additionalProperties: no
+        scale:
+          type: 'number'
+          exclusiveMinimum: 0
+          default: 1
+      additionalProperties: no
+    PrintResponse:
+      type: 'object'
+      required: [ 'url' ]
+      properties:
+        url:
+          type: 'string'
+          format: 'url'
+      additionalProperties: no
+    StatusResponse:
+      type: 'object'
+      required: [ 'status' ]
+      properties:
+        status:
+          type: 'boolean'
+      additionalProperties: no
