@@ -172,7 +172,7 @@ func GetPDFBuffer(ctx context.Context, data RequestData, res *[]byte) error {
 	idleReached := false
 	err = chromedp.Run(tCtx, chromedp.Tasks{
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			defer Elapsed(fmt.Sprintf("Navigate to %s", data.Url))
+			defer Elapsed(fmt.Sprintf("Navigate to %s", data.Url))()
 
 			if err := chromedp.Navigate(data.Url).Do(ctx); err != nil {
 				return err
