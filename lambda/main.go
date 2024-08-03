@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"slices"
 	"strings"
@@ -12,57 +13,92 @@ import (
 	"github.com/chialab/print2pdf-go/print2pdf"
 )
 
-var BucketName = os.Getenv("BUCKET")
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
+
 var CorsAllowedHosts = os.Getenv("CORS_ALLOWED_HOSTS")
+
+func main() {
+	lambda.Start(handler)
+}
 
 // Handle a request.
 func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	responseHeaders := map[string]string{"Content-Type": "application/json"}
+	headers := map[string]string{"Content-Type": "application/json"}
 	origin, ok := event.Headers["Origin"]
 	if !ok {
 		origin = event.Headers["origin"]
 	}
 	if CorsAllowedHosts != "" && origin != "" {
 		if CorsAllowedHosts == "*" {
-			responseHeaders["Access-Control-Allow-Origin"] = "*"
+			headers["Access-Control-Allow-Origin"] = "*"
 		} else {
-			allowedHosts := strings.Split(CorsAllowedHosts, ",")
-			if slices.Contains(allowedHosts, origin) {
-				responseHeaders["Access-Control-Allow-Origin"] = origin
+			hosts := strings.Split(CorsAllowedHosts, ",")
+			if slices.Contains(hosts, origin) {
+				headers["Access-Control-Allow-Origin"] = origin
 			}
 		}
 	}
 
-	var requestData print2pdf.RequestData
-	err := json.Unmarshal([]byte(event.Body), &requestData)
+	var data print2pdf.RequestData
+	err := json.Unmarshal([]byte(event.Body), &data)
 	if err != nil {
-		return events.APIGatewayProxyResponse{}, err
+		fmt.Fprintf(os.Stderr, "error decoding JSON: %s\noriginal request body: %s\n", err, event.Body)
+
+		return JsonError("internal server error", 500), nil
 	}
 
 	var buf []byte
-	err = print2pdf.GetPDFBuffer(ctx, requestData, &buf)
-	if err != nil {
-		return events.APIGatewayProxyResponse{}, err
+	err = print2pdf.GetPDFBuffer(ctx, data, &buf)
+	if ve, ok := err.(print2pdf.ValidationError); ok {
+		fmt.Fprintf(os.Stderr, "request validation error: %s\n", ve)
+
+		return JsonError(ve.Error(), 400), nil
+	} else if err != nil {
+		fmt.Fprintf(os.Stderr, "error getting PDF buffer: %s\n", err)
+
+		return JsonError("internal server error", 500), nil
 	}
 
-	url, err := print2pdf.UploadFile(ctx, BucketName, requestData.FileName, &buf)
+	url, err := print2pdf.UploadFile(ctx, data.FileName, &buf)
 	if err != nil {
-		return events.APIGatewayProxyResponse{}, err
+		fmt.Fprintf(os.Stderr, "error uploading file: %s\n", err)
+
+		return JsonError("internal server error", 500), nil
 	}
 
-	responseData := print2pdf.ResponseData{Url: url}
-	responseJson, err := json.Marshal(responseData)
+	body, err := json.Marshal(print2pdf.ResponseData{Url: url})
 	if err != nil {
-		return events.APIGatewayProxyResponse{}, err
+		fmt.Fprintf(os.Stderr, "error encoding response to JSON: %s\n", err)
+
+		return JsonError("internal server error", 500), nil
 	}
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: 200,
-		Body:       string(responseJson),
-		Headers:    responseHeaders,
+		Body:       string(body),
+		Headers:    headers,
 	}, nil
 }
 
-func main() {
-	lambda.Start(handler)
+// Prepare an HTTP error response.
+func JsonError(message string, code int) events.APIGatewayProxyResponse {
+	ct := "application/json"
+	body, err := json.Marshal(ErrorResponse{message})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error encoding error message to JSON: %s\noriginal error: %s\n", err, message)
+		body = []byte("internal server error")
+		code = 500
+		ct = "text/plain"
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: code,
+		Body:       string(body),
+		Headers: map[string]string{
+			"Content-Type":           ct,
+			"X-Content-Type-Options": "nosniff",
+		},
+	}
 }
