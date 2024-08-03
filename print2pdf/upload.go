@@ -12,10 +12,17 @@ import (
 	"github.com/google/uuid"
 )
 
+// S3 bucket name. Required.
+var BucketName = os.Getenv("BUCKET")
 var s3Client *s3.Client
 
 // Initialize AWS SDK.
 func init() {
+	if BucketName == "" {
+		fmt.Fprintln(os.Stderr, "missing required environment variable BUCKET")
+		os.Exit(1)
+	}
+
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error loading AWS SDK configuration: %v", err)
@@ -26,7 +33,7 @@ func init() {
 }
 
 // Upload a file to S3 with a randomly prefixed key.
-func UploadFile(ctx context.Context, bucketName string, fileName string, contents *[]byte) (string, error) {
+func UploadFile(ctx context.Context, fileName string, contents *[]byte) (string, error) {
 	uuidv4, err := uuid.NewRandom()
 	if err != nil {
 		return "", fmt.Errorf("error generating UUIDv4: %s", err)
@@ -36,10 +43,10 @@ func UploadFile(ctx context.Context, bucketName string, fileName string, content
 	}
 
 	key := fmt.Sprintf("%s/%s", uuidv4, fileName)
-	dest := fmt.Sprintf("https://%s.s3.dualstack.%s.amazonaws.com/%s", bucketName, s3Client.Options().Region, key)
+	dest := fmt.Sprintf("https://%s.s3.dualstack.%s.amazonaws.com/%s", BucketName, s3Client.Options().Region, key)
 	defer Elapsed(fmt.Sprintf("Upload PDF of size %s to %s", HumanizeBytes(uint64(len(*contents))), dest))()
 	_, err = s3Client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:             &bucketName,
+		Bucket:             &BucketName,
 		Key:                &key,
 		Body:               bytes.NewReader(*contents),
 		ContentDisposition: Ptr("attachment"),

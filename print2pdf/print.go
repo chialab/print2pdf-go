@@ -45,13 +45,14 @@ func NewValidationError(message string) ValidationError {
 	return ValidationError{message}
 }
 
+// Chromium binary path. Required.
 var ChromiumPath = os.Getenv("CHROMIUM_PATH")
 var browserCtx context.Context
 
 // Allocate a browser to be reused by multiple handler invocations, to reduce startup time.
 func init() {
 	if ChromiumPath == "" {
-		fmt.Fprintln(os.Stderr, "set CHROMIUM_PATH environment variable to configure the path to the Chromium binary")
+		fmt.Fprintln(os.Stderr, "missing required environment variable CHROMIUM_PATH")
 		os.Exit(1)
 	}
 
