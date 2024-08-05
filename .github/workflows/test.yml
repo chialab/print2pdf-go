@@ -1,0 +1,31 @@
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: Run linter
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: ['plain', 'lambda']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+          go-version-file: ${{ matrix.module }}/go.mod
+
+      - name: Linter
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: ${{ matrix.module }}
