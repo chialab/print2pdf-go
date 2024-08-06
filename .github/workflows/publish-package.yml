@@ -1,0 +1,26 @@
+name: Publish GO package
+
+on:
+  push:
+    tags: [ print2pdf/v* ]
+
+jobs:
+    publish-package:
+      runs-on: ubuntu-latest
+      timeout-minutes: 5
+
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+
+        - name: Set up Go
+          uses: actions/setup-go@v5
+          with:
+            cache-dependency-path: print2pdf/go.sum
+            go-version-file: print2pdf/go.mod
+
+        - name: Publish package
+          env:
+            GOPROXY: proxy.golang.org
+            TAG: ${{ github.ref_name }}
+          run: go list -m "github.com/chialab/print2pdf-go/print2pdf@${TAG#print2pdf/}"
