@@ -35,6 +35,7 @@ jobs:
             type=semver,pattern={{major}}
           flavor: |
             suffix=-${{ matrix.module }}
+            latest=false
 
       - name: Login to GitHub Packages
         if: github.event_name != 'pull_request'
