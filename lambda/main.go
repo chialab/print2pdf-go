@@ -13,7 +13,11 @@ import (
 	"github.com/chialab/print2pdf-go/print2pdf"
 )
 
-type ErrorResponse struct {
+type ResponseData struct {
+	Url string `json:"url"`
+}
+
+type ResponseError struct {
 	Message string `json:"message"`
 }
 
@@ -41,7 +45,7 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 		}
 	}
 
-	var data print2pdf.RequestData
+	var data print2pdf.GetPDFParams
 	err := json.Unmarshal([]byte(event.Body), &data)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error decoding JSON: %s\noriginal request body: %s\n", err, event.Body)
@@ -68,7 +72,7 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 		return JsonError("internal server error", 500), nil
 	}
 
-	body, err := json.Marshal(print2pdf.ResponseData{Url: url})
+	body, err := json.Marshal(ResponseData{Url: url})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error encoding response to JSON: %s\n", err)
 
@@ -85,7 +89,7 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 // Prepare an HTTP error response.
 func JsonError(message string, code int) events.APIGatewayProxyResponse {
 	ct := "application/json"
-	body, err := json.Marshal(ErrorResponse{message})
+	body, err := json.Marshal(ResponseError{message})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error encoding error message to JSON: %s\noriginal error: %s\n", err, message)
 		body = []byte("internal server error")

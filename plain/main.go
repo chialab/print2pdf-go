@@ -13,7 +13,11 @@ import (
 	"github.com/chialab/print2pdf-go/print2pdf"
 )
 
-type ErrorResponse struct {
+type ResponseData struct {
+	Url string `json:"url"`
+}
+
+type ResponseError struct {
 	Message string `json:"message"`
 }
 
@@ -88,7 +92,7 @@ func handlePrintPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var data print2pdf.RequestData
+	var data print2pdf.GetPDFParams
 	err = json.Unmarshal(body, &data)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error decoding JSON: %s\noriginal request body: %s\n", err, string(body))
@@ -119,7 +123,7 @@ func handlePrintPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err = json.Marshal(print2pdf.ResponseData{Url: url})
+	body, err = json.Marshal(ResponseData{Url: url})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error encoding response to JSON: %s\n", err)
 		JsonError(w, "internal server error", http.StatusInternalServerError)
@@ -139,7 +143,7 @@ func handlePrintPost(w http.ResponseWriter, r *http.Request) {
 // writes are done to w.
 func JsonError(w http.ResponseWriter, message string, code int) {
 	w.Header().Set("Content-Type", "application/json")
-	body, err := json.Marshal(ErrorResponse{message})
+	body, err := json.Marshal(ResponseError{message})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error encoding error message to JSON: %s\noriginal error: %s\n", err, message)
 		body = []byte("internal server error")

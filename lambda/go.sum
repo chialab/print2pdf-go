@@ -36,8 +36,8 @@ github.com/aws/aws-sdk-go-v2/service/sts v1.30.3 h1:ZsDKRLXGWHk8WdtyYMoGNO7bTudr
 github.com/aws/aws-sdk-go-v2/service/sts v1.30.3/go.mod h1:zwySh8fpFyXp9yOr/KVzxOl8SRqgf/IDw5aUt9UKFcQ=
 github.com/aws/smithy-go v1.20.3 h1:ryHwveWzPV5BIof6fyDvor6V3iUL7nTfiTKXHiW05nE=
 github.com/aws/smithy-go v1.20.3/go.mod h1:krry+ya/rV9RDcV/Q16kpu6ypI4K2czasz0NC3qS14E=
-github.com/chialab/print2pdf-go/print2pdf v0.1.7 h1:6yLQUcqNMQcnx135V7Fak18vJPiZXXSYY3afub1g73U=
-github.com/chialab/print2pdf-go/print2pdf v0.1.7/go.mod h1:UuGsQCvlgu1MvxFlAVzCIbiSRf3IsrJSFljLyRBSnKk=
+github.com/chialab/print2pdf-go/print2pdf v0.1.8 h1:mwCYm+6Q2dRYctiYRnt96tHn+mT1tFNRqrYJJTWrMsQ=
+github.com/chialab/print2pdf-go/print2pdf v0.1.8/go.mod h1:UuGsQCvlgu1MvxFlAVzCIbiSRf3IsrJSFljLyRBSnKk=
 github.com/chromedp/cdproto v0.0.0-20240801214329-3f85d328b335 h1:bATMoZLH2QGct1kzDxfmeBUQI/QhQvB0mBrOTct+YlQ=
 github.com/chromedp/cdproto v0.0.0-20240801214329-3f85d328b335/go.mod h1:GKljq0VrfU4D5yc+2qA6OVr8pmO/MBbPEWqWQ/oqGEs=
 github.com/chromedp/chromedp v0.10.0 h1:bRclRYVpMm/UVD76+1HcRW9eV3l58rFfy7AdBvKab1E=
