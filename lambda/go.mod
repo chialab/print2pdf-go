@@ -4,7 +4,7 @@ go 1.22.5
 
 require (
 	github.com/aws/aws-lambda-go v1.47.0
-	github.com/chialab/print2pdf-go/print2pdf v0.1.6
+	github.com/chialab/print2pdf-go/print2pdf v0.1.7
 )
 
 require (
@@ -35,5 +35,5 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/sys v0.23.0 // indirect
 )
