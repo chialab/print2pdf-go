@@ -4,10 +4,10 @@ IMAGE_NAME ?= print2pdf
 IMAGE_TAG ?= dev
 
 bin-plain:
-	CGO_ENABLED=0 go build -ldflags '-s' -o build/print2pdf-plain plain
+	CGO_ENABLED=0 go build -C plain -ldflags '-s' -o build/print2pdf-plain
 
 bin-lambda:
-	CGO_ENABLED=0 go build -ldflags '-s' -o build/print2pdf-lambda lambda
+	CGO_ENABLED=0 go build -C lambda -ldflags '-s' -o build/print2pdf-lambda
 
 docker-plain:
 	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) --file plain/Dockerfile plain/
