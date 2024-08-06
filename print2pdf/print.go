@@ -14,12 +14,13 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
+// Represents a print format's width and height, in inches.
 type PrintFormat struct {
 	Width  float64
 	Height float64
 }
 
-// Taken from https://pptr.dev/api/puppeteer.paperformat.
+// Map of format names to their dimensions, in inches. Taken from https://pptr.dev/api/puppeteer.paperformat.
 var FormatsMap = map[string]PrintFormat{
 	"Letter":  {8.5, 11},
 	"Legal":   {8.5, 14},
@@ -34,19 +35,25 @@ var FormatsMap = map[string]PrintFormat{
 	"A6":      {4.13, 5.83},
 }
 
+// Validation error in supplied parameter.
 type ValidationError struct {
 	message string
 }
 
+// Implement error interface.
 func (v ValidationError) Error() string {
 	return v.message
 }
+
+// Create a new validation error.
 func NewValidationError(message string) ValidationError {
 	return ValidationError{message}
 }
 
 // Chromium binary path. Required.
 var ChromiumPath = os.Getenv("CHROMIUM_PATH")
+
+// Reference to browser context, initialized in init function of this package.
 var browserCtx context.Context
 
 // Allocate a browser to be reused by multiple handler invocations, to reduce startup time.
@@ -78,7 +85,7 @@ func init() {
 	}()
 }
 
-// Get print format sizes from string name.
+// Get print format dimensions from string name.
 func getFormat(format string) (PrintFormat, error) {
 	f, ok := FormatsMap[format]
 	if !ok {
@@ -93,8 +100,9 @@ func getFormat(format string) (PrintFormat, error) {
 	return f, nil
 }
 
-// Prepare print parameters from request data, with defaults.
-func getPrintParams(data RequestData) (page.PrintToPDFParams, error) {
+// Prepare chromedp's print parameters from provider parameters, with defaults.
+// Return an error if validation of any parameter fails.
+func getPrintParams(data GetPDFParams) (page.PrintToPDFParams, error) {
 	params := page.PrintToPDFParams{
 		PrintBackground:         true,
 		Landscape:               false,
@@ -148,7 +156,7 @@ func getPrintParams(data RequestData) (page.PrintToPDFParams, error) {
 }
 
 // Get a buffer of bytes representing a webpage in PDF format.
-func GetPDFBuffer(ctx context.Context, data RequestData, res *[]byte) error {
+func GetPDFBuffer(ctx context.Context, data GetPDFParams, res *[]byte) error {
 	defer Elapsed("Total time to print PDF")()
 
 	params, err := getPrintParams(data)

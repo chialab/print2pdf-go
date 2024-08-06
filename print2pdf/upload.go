@@ -14,6 +14,8 @@ import (
 
 // S3 bucket name. Required.
 var BucketName = os.Getenv("BUCKET")
+
+// Reference to AWS S3 client, initialized in init function of this package.
 var s3Client *s3.Client
 
 // Initialize AWS SDK.
@@ -32,7 +34,7 @@ func init() {
 	s3Client = s3.NewFromConfig(cfg)
 }
 
-// Upload a file to S3 with a randomly prefixed key.
+// Upload a file to S3. A random UUIDv4 prefix is added to the filename and used as key in the bucket, to avoid collisions.
 func UploadFile(ctx context.Context, fileName string, contents *[]byte) (string, error) {
 	uuidv4, err := uuid.NewRandom()
 	if err != nil {
