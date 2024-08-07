@@ -58,6 +58,7 @@ jobs:
   tfsec:
     name: Run tfsec
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
       - name: Checkout

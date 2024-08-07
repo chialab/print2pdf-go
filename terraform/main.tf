@@ -3,9 +3,6 @@ data "aws_partition" "current" {}
 ###
 # Bucket
 ###
-#tfsec:ignore:enable-bucket-encryption
-#tfsec:ignore:encryption-customer-key
-#tfsec:ignore:enable-bucket-logging
 resource "aws_s3_bucket" "default" {
   bucket_prefix = "${var.name}-"
 }
@@ -47,10 +44,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "default" {
 resource "aws_s3_bucket_public_access_block" "default" {
   bucket = aws_s3_bucket.default.bucket
 
-  block_public_acls       = false #tfsec:ignore:block-public-acls
-  ignore_public_acls      = false #tfsec:ignore:ignore-public-acls
-  block_public_policy     = false #tfsec:ignore:block-public-policy
-  restrict_public_buckets = false #tfsec:ignore:no-public-buckets
+  block_public_acls       = false
+  ignore_public_acls      = false
+  block_public_policy     = false
+  restrict_public_buckets = false
 }
 
 resource "aws_s3_bucket_cors_configuration" "default" {
@@ -204,7 +201,6 @@ resource "aws_api_gateway_deployment" "default" {
   }
 }
 
-#tfsec:ignore:enable-access-logging
 resource "aws_api_gateway_stage" "default" {
   deployment_id = aws_api_gateway_deployment.default.id
   rest_api_id   = aws_api_gateway_rest_api.default.id
