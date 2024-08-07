@@ -1,0 +1,69 @@
+name: Terraform
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.tf'
+      - '**.tfpl'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.tf'
+      - '**.tfpl'
+
+jobs:
+  format:
+    name: Run formatter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Formatter
+        run: terraform -chdir=terraform fmt -check -diff
+
+  validate:
+    name: Run validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize
+        run: terraform -chdir=terraform init -upgrade -backend=false
+
+      - name: Validate
+        run: terraform -chdir=terraform validate
+
+  ftlint:
+    name: Run TFLint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: TFLint
+        run: tflint --chdir terraform
+
+  tfsec:
+    name: Run tfsec
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: terraform

@@ -4,34 +4,30 @@
 version: 2
 updates:
 
-  # Maintain dependencies for print2pdf package
+  # Maintain dependencies for go modules
   - package-ecosystem: "gomod"
-    directory: "/print2pdf"
+    directories:
+      - "/print2pdf"
+      - "/plain"
+      - "/lambda"
     schedule:
       interval: "weekly"
     groups:
       aws:
         patterns: ['github.com/aws/*']
+      chialab:
+        patterns: ['github.com/chialab/*']
       chromedp:
         patterns: ['github.com/chromedp/*']
-  # Maintain self-dependencies for plain module
-  - package-ecosystem: "gomod"
-    directory: "/plain"
-    schedule:
-      interval: "weekly"
-    groups:
-      chialab:
-        patterns: ['github.com/chialab/*']
-  # Maintain self-dependencies for lambda module
-  - package-ecosystem: "gomod"
-    directory: "/lambda"
+
+  # Maintain dependencies for Terraform module
+  - package-ecosystem: "terraform"
+    directory: "/terraform"
     schedule:
       interval: "weekly"
     groups:
       aws:
-        patterns: ['github.com/aws/*']
-      chialab:
-        patterns: ['github.com/chialab/*']
+        patterns: ['aws']
 
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"

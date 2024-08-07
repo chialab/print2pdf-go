@@ -1,14 +1,18 @@
-name: "Go Dependency Submission"
+name: Dependency Submission
 
 on:
   push:
     branches: [ main ]
+    paths:
+      - '**.go'
+      - '**.go.mod'
+      - '**.go.sum'
 
 permissions:
   contents: write
 
 jobs:
-  go-action-detection:
+  dependency-submission:
     name: Submit dependencies
     runs-on: ubuntu-latest
     timeout-minutes: 5
