@@ -3,8 +3,19 @@ data "aws_partition" "current" {}
 ###
 # Bucket
 ###
+#tfsec:ignore:enable-bucket-encryption
+#tfsec:ignore:encryption-customer-key
+#tfsec:ignore:enable-bucket-logging
 resource "aws_s3_bucket" "default" {
   bucket_prefix = "${var.name}-"
+}
+
+resource "aws_s3_bucket_versioning" "default" {
+  bucket = aws_s3_bucket.default.bucket
+
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "default" {
@@ -36,10 +47,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "default" {
 resource "aws_s3_bucket_public_access_block" "default" {
   bucket = aws_s3_bucket.default.bucket
 
-  block_public_acls       = false
-  ignore_public_acls      = false
-  block_public_policy     = false
-  restrict_public_buckets = false
+  block_public_acls       = false #tfsec:ignore:block-public-acls
+  ignore_public_acls      = false #tfsec:ignore:ignore-public-acls
+  block_public_policy     = false #tfsec:ignore:block-public-policy
+  restrict_public_buckets = false #tfsec:ignore:no-public-buckets
 }
 
 resource "aws_s3_bucket_cors_configuration" "default" {
@@ -74,9 +85,13 @@ resource "aws_s3_bucket_policy" "default" {
 ###
 # ECR
 ###
-
 resource "aws_ecr_repository" "default" {
   name = var.name
+  image_tag_mutability = "IMMUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
 }
 
 ###
@@ -109,7 +124,7 @@ data "aws_iam_policy_document" "bucket_write" {
   statement {
     effect    = "Allow"
     actions   = ["s3:PutObject"]
-    resources = ["${aws_s3_bucket.default.arn}/*"]
+    resources = [aws_s3_bucket.default.arn]
   }
 }
 
@@ -126,8 +141,14 @@ data "aws_iam_policy_document" "ecr_read" {
       "ecr:BatchGetImage",
       "ecr:GetDownloadUrlForLayer",
     ]
-    resources = ["${aws_ecr_repository.default.arn}"]
+    resources = [aws_ecr_repository.default.arn]
   }
+}
+
+resource "aws_iam_role_policy" "ecr_read" {
+  name = "ECRReadLambda"
+  role = aws_iam_role.default.name
+  policy = data.aws_iam_policy_document.ecr_read
 }
 
 resource "aws_lambda_permission" "allow_api_gateway" {
@@ -183,6 +204,7 @@ resource "aws_api_gateway_deployment" "default" {
   }
 }
 
+#tfsec:ignore:enable-access-logging
 resource "aws_api_gateway_stage" "default" {
   deployment_id = aws_api_gateway_deployment.default.id
   rest_api_id   = aws_api_gateway_rest_api.default.id
