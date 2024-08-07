@@ -54,7 +54,7 @@ resource "aws_s3_bucket_cors_configuration" "default" {
   }
 }
 
-resource "aws_iam_policy_document" "bucket_read" {
+data "aws_iam_policy_document" "bucket_read" {
   statement {
     principals {
       type        = "*"
@@ -68,7 +68,7 @@ resource "aws_iam_policy_document" "bucket_read" {
 
 resource "aws_s3_bucket_policy" "default" {
   bucket = aws_s3_bucket.default.bucket
-  policy = aws_iam_policy_document.bucket_read.json
+  policy = data.aws_iam_policy_document.bucket_read.json
 }
 
 ###
@@ -102,7 +102,7 @@ resource "aws_iam_role" "default" {
 
 resource "aws_iam_role_policy_attachment" "lambda_execution" {
   role       = aws_iam_role.default.name
-  policy_arn = "arn:${data.aws_partition.current.name}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 data "aws_iam_policy_document" "bucket_write" {
