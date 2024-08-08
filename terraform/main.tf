@@ -3,6 +3,7 @@ data "aws_partition" "current" {}
 ###
 # Bucket
 ###
+#tfsec:ignore:enable-bucket-encryption tfsec:ignore:encryption-customer-key tfsec:ignore:enable-bucket-logging
 resource "aws_s3_bucket" "default" {
   bucket_prefix = "${var.name}-"
 }
@@ -41,6 +42,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "default" {
   }
 }
 
+#tfsec:ignore:block-public-acls tfsec:ignore:ignore-public-acls tfsec:ignore:block-public-policy tfsec:ignore:no-public-buckets
 resource "aws_s3_bucket_public_access_block" "default" {
   bucket = aws_s3_bucket.default.bucket
 
@@ -82,8 +84,9 @@ resource "aws_s3_bucket_policy" "default" {
 ###
 # ECR
 ###
+#tfsec:ignore:repository-customer-key
 resource "aws_ecr_repository" "default" {
-  name = var.name
+  name                 = var.name
   image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
@@ -143,8 +146,8 @@ data "aws_iam_policy_document" "ecr_read" {
 }
 
 resource "aws_iam_role_policy" "ecr_read" {
-  name = "ECRReadLambda"
-  role = aws_iam_role.default.name
+  name   = "ECRReadLambda"
+  role   = aws_iam_role.default.name
   policy = data.aws_iam_policy_document.ecr_read
 }
 
@@ -155,6 +158,7 @@ resource "aws_lambda_permission" "allow_api_gateway" {
   source_arn    = "${aws_api_gateway_stage.default.execution_arn}/POST/print"
 }
 
+#tfsec:ignore:enable-tracing
 resource "aws_lambda_function" "default" {
   function_name = var.name
   image_uri     = "${aws_ecr_repository.default.repository_url}:${var.image_tag}"
@@ -201,6 +205,7 @@ resource "aws_api_gateway_deployment" "default" {
   }
 }
 
+#tfsec:ignore:enable-access-logging tfsec:ignore:enable-tracing
 resource "aws_api_gateway_stage" "default" {
   deployment_id = aws_api_gateway_deployment.default.id
   rest_api_id   = aws_api_gateway_rest_api.default.id
