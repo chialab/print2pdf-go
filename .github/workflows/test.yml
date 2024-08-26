@@ -9,10 +9,10 @@ on:
       - '**/go.sum'
   pull_request:
     branches: [ main ]
-    paths:
-      - '**.go'
-      - '**/go.mod'
-      - '**/go.sum'
+    # paths:
+    #   - '**.go'
+    #   - '**/go.mod'
+    #   - '**/go.sum'
 
 jobs:
   lint:
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: ['plain', 'lambda']
+        module: ['print2pdf', 'plain', 'lambda']
 
     steps:
       - name: Checkout
