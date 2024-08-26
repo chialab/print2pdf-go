@@ -12,6 +12,9 @@ updates:
       - "/lambda"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
     groups:
       aws:
         patterns: ['github.com/aws/*']
