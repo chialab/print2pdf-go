@@ -76,8 +76,6 @@ jobs:
     name: Build and release containers
     if: ${{ startsWith(github.ref_name, 'v') }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     timeout-minutes: 5
     strategy:
       matrix:
