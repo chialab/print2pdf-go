@@ -29,6 +29,7 @@ func main() {
 		Port = "3000"
 	}
 
+	http.HandleFunc("/status", statusHandler)
 	http.HandleFunc("/print", printHandler)
 	fmt.Printf("server listening on port %s\n", Port)
 	err := http.ListenAndServe(":"+Port, nil)
@@ -38,6 +39,23 @@ func main() {
 		fmt.Fprintf(os.Stderr, "server error: %s\n", err)
 		os.Exit(1)
 	}
+}
+
+// Handle requests to "/status" endpoint.
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+
+		return
+	}
+
+	if !print2pdf.Running() {
+		w.WriteHeader(http.StatusServiceUnavailable)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // Handle requests to "/print" endpoint.
@@ -71,7 +89,6 @@ func handlePrintOptions(w http.ResponseWriter, r *http.Request) {
 
 // Handle POST requests to "/print" endpoint.
 func handlePrintPost(w http.ResponseWriter, r *http.Request) {
-	r.Context()
 	w.Header().Set("Content-Type", "application/json")
 
 	if CorsAllowedHosts == "" || CorsAllowedHosts == "*" {
