@@ -155,6 +155,11 @@ func getPrintParams(data GetPDFParams) (page.PrintToPDFParams, error) {
 	return params, nil
 }
 
+// Check if the browser is still running.
+func Running() bool {
+	return browserCtx != nil && browserCtx.Err() == nil
+}
+
 // Get a buffer of bytes representing a webpage in PDF format.
 func GetPDFBuffer(ctx context.Context, data GetPDFParams, res *[]byte) error {
 	defer Elapsed("Total time to print PDF")()
