@@ -46,3 +46,7 @@ updates:
         patterns: ['golangci/*']
       release:
         patterns: ['softprops/*']
+      azure:
+        patterns: ['azure/*']
+      helm:
+        patterns: ['helm/*']

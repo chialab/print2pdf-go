@@ -72,12 +72,12 @@ for the available tags.
 
 The `plain` image can be used like this:
 ```shell
-docker run --rm -it -p '3000:3000' -e 'BUCKET=mybucket' ghcr.io/chialab/print2pdf:0.1-plain
+docker run --rm -it -p '3000:3000' -e 'BUCKET=mybucket' ghcr.io/chialab/print2pdf-go/plain:0.1
 ```
 
 The `lambda` image can be used locally like this:
 ```shell
-docker run --rm -it -p '8080:8080' -e 'BUCKET=mybucket' --entrypoint '/usr/local/bin/aws-lambda-rie' ghcr.io/chialab/print2pdf:0.1-lambda "/app/print2pdf"
+docker run --rm -it -p '8080:8080' -e 'BUCKET=mybucket' --entrypoint '/usr/local/bin/aws-lambda-rie' ghcr.io/chialab/print2pdf-go/lambda:0.1 "/app/print2pdf"
 ```
 
 The image is based on [lambda/provided](https://gallery.ecr.aws/lambda/provided), so it comes with [Lambda RIE](https://github.com/aws/aws-lambda-runtime-interface-emulator/)
@@ -87,11 +87,24 @@ for more informations on how to deploy Lambda functions using container images.
 Since it is expected to be run behind an API Gateway, to be used locally the request body for the `/print` endpoint must be converted
 to a JSON string and used as value of a `body` parameter. Also, the actual endpoint to call is `http://localhost:8080/2015-03-31/functions/function/invocations`.
 
-A Terraform module is also provided in the `terraform` directory for convenience, it can be used to setup the AWS infrastructure
+### Terraform module
+
+A Terraform module is provided in the `terraform` directory for convenience, it can be used to setup the AWS infrastructure
 needed to deploy the image as a Lambda function:
 ```terraform
 module "lambda" {
     source = "git::ssh://git@github.com:chialab/print2pdf-go.git//terraform"
     ...
 }
+```
+
+**NOTE:** you will need to build and push the Docker image to the created ECR repository before creating the Lambda function.
+
+### Helm chart
+
+An Helm chart is provided in the `chart` directory for deploying the `plain` application in Kubernetes, and is distributed using GitHub's OCI container registry.
+
+The chart repo URL is `oci://ghcr.io/chialab/helm-charts/print2pdf-go`. Usage example:
+```shell
+helm install example-release oci://ghcr.io/chialab/helm-charts/print2pdf-go --namespace example-ns --values example.yml --version ~0.1.0
 ```

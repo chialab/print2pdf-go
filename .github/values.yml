@@ -1,0 +1,10 @@
+autoscaling:
+  enabled: true
+
+ingress:
+  enabled: true
+  hosts:
+    - host: example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific

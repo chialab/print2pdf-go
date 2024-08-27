@@ -4,13 +4,11 @@ on:
   push:
     branches: [ main ]
     paths:
-      - '**.tf'
-      - '**.tfpl'
+      - 'terraform/**'
   pull_request:
     branches: [ main ]
     paths:
-      - '**.tf'
-      - '**.tfpl'
+      - 'terraform/**'
 
 jobs:
   format:
