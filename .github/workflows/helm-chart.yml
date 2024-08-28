@@ -1,0 +1,46 @@
+name: Helm chart
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+    - 'chart/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+    - 'chart/**'
+
+jobs:
+  lint:
+    name: Run linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Lint
+        run: helm lint chart
+
+  validation:
+    name: Validate manifests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ['1.29.8', '1.30.4', '1.31.0']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Install plugin
+        run: helm plugin install https://github.com/jtyr/kubeconform-helm
+      
+      - name: Validate
+        run: helm kubeconform --summary -f .github/values.yml chart

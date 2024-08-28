@@ -1,0 +1,10 @@
+apiVersion: v2
+name: print2pdf-go
+description: A Helm chart for deploying Print2PDF
+type: application
+sources:
+  - https://github.com/chialab/print2pdf-go
+maintainers:
+  - name: Chialab
+version: 0.1.0
+appVersion: "0.1.9"
