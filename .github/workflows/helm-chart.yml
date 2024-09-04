@@ -45,10 +45,23 @@ jobs:
       - name: Validate
         run: helm kubeconform --summary -f .github/values.yml chart
 
+  version-bump:
+    name: Check version bump
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check version bump
+        run: |
+          version="$(grep 'version:' ./chart/Chart.yaml | tail -n1 | awk '{ print $2 }')"
+          ! helm show chart oci://ghcr.io/chialab/helm-charts/print2pdf-go --version ${version} >/dev/null 2>&1 || (echo "Did you forget to increase Chart version?"; exit 1)
+
   release-chart:
     name: Package and release Helm chart
     if: ${{ github.event_name != 'pull_request' }}
-    needs: [lint, validation]
+    needs: [lint, validation, version-bump]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -66,16 +79,11 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
-      - name: Check version bump
-        id: check
-        run: |
-          version="$(grep 'version:' ./chart/Chart.yaml | tail -n1 | awk '{ print $2 }')"
-          ! helm show chart oci://ghcr.io/chialab/helm-charts/print2pdf-go --version ${version} >/dev/null 2>&1 || (echo "Did you forget to bump Chart version?"; exit 1)
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-
       - name: Package chart
         run: helm package chart
 
       - name: Publish chart
-        run: helm push "print2pdf-go-${{ steps.check.outputs.version }}.tgz" oci://ghcr.io/chialab/helm-charts
+        run: |
+          version="$(grep 'version:' ./chart/Chart.yaml | tail -n1 | awk '{ print $2 }')"
+          helm push "print2pdf-go-${version}.tgz" oci://ghcr.io/chialab/helm-charts
       
