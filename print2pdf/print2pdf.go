@@ -1,12 +1,9 @@
 /*
 Package print2pdf provides functions to save a webpage as a PDF file, leveraging Chromium and the DevTools Protocol.
 
-Requires two environment variables to be set:
-  - CHROMIUM_PATH, with the full path to the Chromium binary
-  - BUCKET, with the name of the AWS S3 bucket
+Requires the environment variable CHROMIUM_PATH to be set with the full path to the Chromium binary.
 
-This packages uses init functions to initialize the AWS SDK and start an headless instance of Chromium, to reduce
-startup time when used as a web service.
+This packages uses init function to start an headless instance of Chromium, to reduce startup time when used as a web service.
 */
 package print2pdf
 
