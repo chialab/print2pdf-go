@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"slices"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -13,37 +12,31 @@ import (
 	"github.com/chialab/print2pdf-go/print2pdf"
 )
 
+// ResponseData represents a JSON-structured response.
 type ResponseData struct {
 	Url string `json:"url"`
 }
 
+// ResponseError represents a JSON-structured error response.
 type ResponseError struct {
 	Message string `json:"message"`
 }
 
-var CorsAllowedHosts = os.Getenv("CORS_ALLOWED_HOSTS")
+// S3 bucket name. Required.
+var BucketName = os.Getenv("BUCKET")
 
 func main() {
+	if BucketName == "" {
+		fmt.Fprintln(os.Stderr, "missing required environment variable BUCKET")
+		os.Exit(1)
+	}
+
 	lambda.Start(handler)
 }
 
 // Handle a request.
 func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	headers := map[string]string{"Content-Type": "application/json"}
-	origin, ok := event.Headers["Origin"]
-	if !ok {
-		origin = event.Headers["origin"]
-	}
-	if CorsAllowedHosts != "" && origin != "" {
-		if CorsAllowedHosts == "*" {
-			headers["Access-Control-Allow-Origin"] = "*"
-		} else {
-			hosts := strings.Split(CorsAllowedHosts, ",")
-			if slices.Contains(hosts, origin) {
-				headers["Access-Control-Allow-Origin"] = origin
-			}
-		}
-	}
 
 	var data print2pdf.GetPDFParams
 	err := json.Unmarshal([]byte(event.Body), &data)
@@ -52,22 +45,24 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 
 		return JsonError("internal server error", 500), nil
 	}
+	if !strings.HasSuffix(data.FileName, ".pdf") {
+		data.FileName += ".pdf"
+	}
 
-	var buf []byte
-	err = print2pdf.GetPDFBuffer(ctx, data, &buf)
+	h, err := print2pdf.NewS3Handler(ctx, BucketName, data.FileName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error creating print handler: %s\n", err)
+
+		return JsonError("internal server error", 500), nil
+	}
+
+	url, err := print2pdf.PrintPDF(ctx, data, h)
 	if ve, ok := err.(print2pdf.ValidationError); ok {
 		fmt.Fprintf(os.Stderr, "request validation error: %s\n", ve)
 
 		return JsonError(ve.Error(), 400), nil
 	} else if err != nil {
 		fmt.Fprintf(os.Stderr, "error getting PDF buffer: %s\n", err)
-
-		return JsonError("internal server error", 500), nil
-	}
-
-	url, err := print2pdf.UploadFile(ctx, data.FileName, &buf)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error uploading file: %s\n", err)
 
 		return JsonError("internal server error", 500), nil
 	}
