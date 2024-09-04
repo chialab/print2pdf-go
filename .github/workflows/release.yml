@@ -118,31 +118,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-  release-chart:
-    name: Package and release Helm chart
-    if: ${{ startsWith(github.ref_name, 'v') }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Login to GitHub Packages
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Setup Helm
-        uses: azure/setup-helm@v4
-
-      - name: Package chart
-        run: helm package chart
-
-      - name: Publish chart
-        run: |
-          version="$(grep 'version:' ./chart/Chart.yaml | tail -n1 | awk '{ print $2 }')"
-          helm push "print2pdf-go-${version}.tgz" oci://ghcr.io/chialab/helm-charts

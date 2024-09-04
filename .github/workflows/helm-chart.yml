@@ -44,3 +44,38 @@ jobs:
       
       - name: Validate
         run: helm kubeconform --summary -f .github/values.yml chart
+
+  release-chart:
+    name: Package and release Helm chart
+    if: ${{ github.event_name != 'pull_request' }}
+    needs: [lint, validation]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Packages
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Check version bump
+        id: check
+        run: |
+          version="$(grep 'version:' ./chart/Chart.yaml | tail -n1 | awk '{ print $2 }')"
+          ! helm show chart oci://ghcr.io/chialab/helm-charts/print2pdf-go --version ${version} >/dev/null 2>&1 || (echo "Did you forget to bump Chart version?"; exit 1)
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Package chart
+        run: helm package chart
+
+      - name: Publish chart
+        run: helm push "print2pdf-go-${{ steps.check.outputs.version }}.tgz" oci://ghcr.io/chialab/helm-charts
+      
