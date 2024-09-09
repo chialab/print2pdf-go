@@ -1,6 +1,5 @@
 # Print2PDF
 
-[![Go reference](https://img.shields.io/badge/go.dev-docs-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/github.com/chialab/print2pdf-go/print2pdf)
 [![Go package release](https://img.shields.io/github/v/tag/chialab/print2pdf-go?filter=print2pdf%2F*&logo=go&logoColor=white&label=pkg&color=007d9c)](https://pkg.go.dev/github.com/chialab/print2pdf-go/print2pdf)
 [![Latest release](https://img.shields.io/github/v/release/chialab/print2pdf-go?logo=github&logoColor=white)](https://github.com/chialab/print2pdf-go/releases/latest)
 
