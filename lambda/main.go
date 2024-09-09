@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -25,6 +26,9 @@ type ResponseError struct {
 // S3 bucket name. Required.
 var BucketName = os.Getenv("BUCKET")
 
+// Comma-separated list of allowed hosts for CORS requests. Defaults to "*", meaning all hosts.
+var CorsAllowedHosts = os.Getenv("CORS_ALLOWED_HOSTS")
+
 func main() {
 	if BucketName == "" {
 		fmt.Fprintln(os.Stderr, "missing required environment variable BUCKET")
@@ -37,6 +41,18 @@ func main() {
 // Handle a request.
 func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	headers := map[string]string{"Content-Type": "application/json"}
+	if CorsAllowedHosts == "" || CorsAllowedHosts == "*" {
+		headers["Access-Control-Allow-Origin"] = "*"
+	} else {
+		allowedHosts := strings.Split(CorsAllowedHosts, ",")
+		origin := event.Headers["Origin"]
+		if origin == "" {
+			origin = event.Headers["origin"]
+		}
+		if slices.Contains(allowedHosts, origin) {
+			headers["Access-Control-Allow-Origin"] = origin
+		}
+	}
 
 	var data print2pdf.GetPDFParams
 	err := json.Unmarshal([]byte(event.Body), &data)

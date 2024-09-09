@@ -104,23 +104,14 @@ func printV2Handler(w http.ResponseWriter, r *http.Request) {
 func handlePrintOptions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,POST")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	if CorsAllowedHosts == "" || CorsAllowedHosts == "*" {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-	} else {
-		allowedHosts := strings.Split(CorsAllowedHosts, ",")
-		origin := r.Header.Get("Origin")
-		if slices.Contains(allowedHosts, origin) {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-		}
-	}
-
+	writeCorsOriginHeader(w, r.Header.Get("Origin"))
 	w.WriteHeader(http.StatusOK)
 }
 
 // Handle POST requests to "/v1/print" endpoint.
 func handlePrintV1Post(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
+	writeCorsOriginHeader(w, r.Header.Get("Origin"))
 	data, err := readRequest(r)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
@@ -167,7 +158,7 @@ func handlePrintV1Post(w http.ResponseWriter, r *http.Request) {
 // Handle POST requests to "/v2/print" endpoint.
 func handlePrintV2Post(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/pdf")
-
+	writeCorsOriginHeader(w, r.Header.Get("Origin"))
 	data, err := readRequest(r)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
@@ -210,6 +201,18 @@ func readRequest(r *http.Request) (print2pdf.GetPDFParams, error) {
 	}
 
 	return data, nil
+}
+
+// Write the "Access-Control-Allow-Origin" header.
+func writeCorsOriginHeader(w http.ResponseWriter, origin string) {
+	if CorsAllowedHosts == "" || CorsAllowedHosts == "*" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	} else {
+		allowedHosts := strings.Split(CorsAllowedHosts, ",")
+		if slices.Contains(allowedHosts, origin) {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
+	}
 }
 
 // JsonError replies to the request with the specified error message and HTTP code.
