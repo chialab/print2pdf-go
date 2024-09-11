@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/signal"
 	"slices"
 	"strings"
+	"syscall"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -29,13 +31,26 @@ var BucketName = os.Getenv("BUCKET")
 // Comma-separated list of allowed hosts for CORS requests. Defaults to "*", meaning all hosts.
 var CorsAllowedHosts = os.Getenv("CORS_ALLOWED_HOSTS")
 
-func main() {
+// Init function checks for required environment variables.
+func init() {
 	if BucketName == "" {
 		fmt.Fprintln(os.Stderr, "missing required environment variable BUCKET")
 		os.Exit(1)
 	}
+}
+
+func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if err := print2pdf.StartBrowser(ctx); err != nil {
+		fmt.Fprintf(os.Stderr, "error starting browser: %s\n", err)
+		os.Exit(1)
+	}
 
 	lambda.Start(handler)
+
+	<-ctx.Done()
+	stop()
 }
 
 // Handle a request.
@@ -78,7 +93,7 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 
 		return JsonError(ve.Error(), 400), nil
 	} else if err != nil {
-		fmt.Fprintf(os.Stderr, "error getting PDF buffer: %s\n", err)
+		fmt.Fprintf(os.Stderr, "error getting PDF: %s\n", err)
 
 		return JsonError("internal server error", 500), nil
 	}

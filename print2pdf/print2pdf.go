@@ -3,7 +3,9 @@ Package print2pdf provides functions to save a webpage as a PDF file, leveraging
 
 Requires the environment variable CHROMIUM_PATH to be set with the full path to the Chromium binary.
 
-This packages uses init function to start an headless instance of Chromium, to reduce startup time when used as a web service.
+The StartBrowser() function starts a headless instance of Chromium, to reduce startup time in long running services (like a web server),
+and therefore must be called before any call PrintPDF(). These functions can (and probably should) use different contexts: the one passed
+to StartBrowser() closes the whole browser when done or cancelled, while the one passed to PrintPDF() closes only the tab it uses.
 */
 package print2pdf
 
@@ -13,10 +15,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
 	"slices"
 	"strings"
-	"syscall"
 
 	"github.com/chromedp/cdproto/emulation"
 	chromedpio "github.com/chromedp/cdproto/io"
@@ -150,33 +150,40 @@ var ChromiumPath = os.Getenv("CHROMIUM_PATH")
 // Reference to browser context, initialized in init function of this package.
 var browserCtx context.Context
 
-// Allocate a browser to be reused by multiple handler invocations, to reduce startup time.
+// Init function checks for required environment variables.
 func init() {
 	if ChromiumPath == "" {
 		fmt.Fprintln(os.Stderr, "missing required environment variable CHROMIUM_PATH")
 		os.Exit(1)
 	}
+}
 
+// Allocate a browser to be reused by multiple invocations, to reduce startup time. Cancelling the context will close the browser.
+// This function must be called before starting to print PDFs.
+func StartBrowser(ctx context.Context) error {
+	if Running() {
+		return nil
+	}
+
+	defer Elapsed("Browser startup")()
 	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.ExecPath(ChromiumPath))
-	allocatorCtx, allocatorCancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	allocatorCtx, _ := chromedp.NewExecAllocator(ctx, opts...)
 	browserCtx, _ = chromedp.NewContext(allocatorCtx)
 
 	// Navigate to blank page so that the browser is started.
 	err := chromedp.Run(browserCtx, chromedp.Tasks{chromedp.Navigate("about:blank")})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error initializing browser: %v", err)
-		os.Exit(1)
+
+		return err
 	}
 
-	// Listen for interrupt/sigterm and gracefully close the browser.
-	ch := make(chan os.Signal, 2)
-	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-ch
-		fmt.Println("interrupt received, closing browser before exiting...")
-		allocatorCancel()
-		os.Exit(0)
-	}()
+	return nil
+}
+
+// Check if the browser is still running.
+func Running() bool {
+	return browserCtx != nil && browserCtx.Err() == nil
 }
 
 // Get print format dimensions from string name.
@@ -249,13 +256,13 @@ func getPrintParams(data GetPDFParams) (page.PrintToPDFParams, error) {
 	return params, nil
 }
 
-// Check if the browser is still running.
-func Running() bool {
-	return browserCtx != nil && browserCtx.Err() == nil
-}
-
-// Print a webpage in PDF format and write the result to the input handler.
+// Print a webpage in PDF format and write the result to the input handler. Cancelling the context will close the tab.
+// StartBrowser() must have been called once before calling this function.
 func PrintPDF(ctx context.Context, data GetPDFParams, h PDFHandler) (string, error) {
+	if browserCtx == nil {
+		return "", fmt.Errorf("must call StartBrowser() before printing a PDF")
+	}
+
 	defer Elapsed("Total time to print PDF")()
 
 	params, err := getPrintParams(data)
@@ -272,14 +279,15 @@ func PrintPDF(ctx context.Context, data GetPDFParams, h PDFHandler) (string, err
 		media = data.Media
 	}
 
-	// NOTE: here we're using browserCtx instead of the one for this handler's invocation.
-	tCtx, cancel := chromedp.NewContext(browserCtx)
-	defer cancel()
+	tabCtx, tabCancel := chromedp.NewContext(browserCtx)
+	defer tabCancel()
+	// Cancel the tab context (closing the tab) if the passed context is canceled.
+	context.AfterFunc(ctx, tabCancel)
 
 	interactiveReached := false
 	idleReached := false
 	res := ""
-	err = chromedp.Run(tCtx, chromedp.Tasks{
+	err = chromedp.Run(tabCtx, chromedp.Tasks{
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			defer Elapsed(fmt.Sprintf("Navigate to %s", data.Url))()
 
