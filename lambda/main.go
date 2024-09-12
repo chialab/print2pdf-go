@@ -25,6 +25,9 @@ type ResponseError struct {
 	Message string `json:"message"`
 }
 
+// Version string, set at build time.
+var Version = "development"
+
 // S3 bucket name. Required.
 var BucketName = os.Getenv("BUCKET")
 
@@ -33,6 +36,10 @@ var CorsAllowedHosts = os.Getenv("CORS_ALLOWED_HOSTS")
 
 // Init function checks for required environment variables.
 func init() {
+	if len(os.Args) > 1 && slices.Contains([]string{"-v", "--version"}, os.Args[1]) {
+		fmt.Printf("Version: %s\n", Version)
+		os.Exit(0)
+	}
 	if BucketName == "" {
 		fmt.Fprintln(os.Stderr, "missing required environment variable BUCKET")
 		os.Exit(1)

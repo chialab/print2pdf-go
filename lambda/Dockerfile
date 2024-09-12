@@ -4,6 +4,7 @@
 FROM --platform=$BUILDPLATFORM golang:1.22-alpine AS builder
 ARG TARGETOS
 ARG TARGETARCH
+ARG VERSION=development
 
 WORKDIR /app
 
@@ -11,7 +12,7 @@ COPY go.mod go.sum /app/
 RUN go mod download
 
 COPY *.go /app/
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags '-s' -tags 'lambda.norpc' -o build/print2pdf
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags "-s -X main.Version=${VERSION}" -tags 'lambda.norpc' -o build/print2pdf
 
 ###
 # Download chromium for AWS Lambda

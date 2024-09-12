@@ -26,6 +26,9 @@ type ResponseError struct {
 	Message string `json:"message"`
 }
 
+// Version string, set at build time.
+var Version = "development"
+
 // S3 bucket name. Required for "/v1/print" endpoint.
 var BucketName = os.Getenv("BUCKET")
 
@@ -37,6 +40,10 @@ var CorsAllowedHosts = os.Getenv("CORS_ALLOWED_HOSTS")
 
 // Init function set default values to environment variables.
 func init() {
+	if len(os.Args) > 1 && slices.Contains([]string{"-v", "--version"}, os.Args[1]) {
+		fmt.Printf("Version: %s\n", Version)
+		os.Exit(0)
+	}
 	if Port == "" {
 		Port = "3000"
 	}
