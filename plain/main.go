@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"slices"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/chialab/print2pdf-go/print2pdf"
 )
@@ -30,20 +35,48 @@ var Port = os.Getenv("PORT")
 // Comma-separated list of allowed hosts for CORS requests. Defaults to "*", meaning all hosts.
 var CorsAllowedHosts = os.Getenv("CORS_ALLOWED_HOSTS")
 
-func main() {
+// Init function set default values to environment variables.
+func init() {
 	if Port == "" {
 		Port = "3000"
+	}
+}
+
+func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if err := print2pdf.StartBrowser(ctx); err != nil {
+		fmt.Fprintf(os.Stderr, "error starting browser: %s\n", err)
+		os.Exit(1)
 	}
 
 	http.HandleFunc("/status", statusHandler)
 	http.HandleFunc("/v1/print", printV1Handler)
 	http.HandleFunc("/v2/print", printV2Handler)
-	fmt.Printf("server listening on port %s\n", Port)
-	err := http.ListenAndServe(":"+Port, nil)
-	if errors.Is(err, http.ErrServerClosed) {
-		fmt.Println("server closed")
-	} else if err != nil {
-		fmt.Fprintf(os.Stderr, "server error: %s\n", err)
+
+	srv := &http.Server{
+		Addr:        ":" + Port,
+		BaseContext: func(_ net.Listener) context.Context { return ctx },
+		ReadTimeout: 10 * time.Second,
+		Handler:     http.DefaultServeMux,
+	}
+	srvErr := make(chan error, 1)
+	go func() {
+		fmt.Printf("server listening on port %s\n", Port)
+		srvErr <- srv.ListenAndServe()
+	}()
+
+	select {
+	case err := <-srvErr:
+		fmt.Fprintf(os.Stderr, "error starting server: %s\n", err)
+		os.Exit(1)
+	case <-ctx.Done():
+		stop()
+	}
+
+	err := srv.Shutdown(context.Background())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error closing server: %s\n", err)
 		os.Exit(1)
 	}
 }
@@ -134,8 +167,12 @@ func handlePrintV1Post(w http.ResponseWriter, r *http.Request) {
 		JsonError(w, ve.Error(), http.StatusBadRequest)
 
 		return
+	} else if errors.Is(r.Context().Err(), context.Canceled) {
+		fmt.Println("connection closed or request canceled")
+
+		return
 	} else if err != nil {
-		fmt.Fprintf(os.Stderr, "error getting PDF buffer: %s\n", err)
+		fmt.Fprintf(os.Stderr, "error getting PDF: %s\n", err)
 		JsonError(w, "internal server error", http.StatusInternalServerError)
 
 		return
@@ -173,13 +210,11 @@ func handlePrintV2Post(w http.ResponseWriter, r *http.Request) {
 	if ve, ok := err.(print2pdf.ValidationError); ok {
 		fmt.Fprintf(os.Stderr, "request validation error: %s\n", ve)
 		JsonError(w, ve.Error(), http.StatusBadRequest)
-
-		return
+	} else if errors.Is(r.Context().Err(), context.Canceled) {
+		fmt.Println("connection closed or request canceled")
 	} else if err != nil {
-		fmt.Fprintf(os.Stderr, "error getting PDF buffer: %s\n", err)
+		fmt.Fprintf(os.Stderr, "error getting PDF: %s\n", err)
 		JsonError(w, "internal server error", http.StatusInternalServerError)
-
-		return
 	}
 }
 
