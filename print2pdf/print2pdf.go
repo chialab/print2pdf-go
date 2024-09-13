@@ -279,7 +279,7 @@ func PrintPDF(ctx context.Context, data GetPDFParams, h PDFHandler) (string, err
 		media = data.Media
 	}
 
-	tabCtx, tabCancel := chromedp.NewContext(browserCtx)
+	tabCtx, tabCancel := chromedp.NewContext(browserCtx, chromedp.WithNewBrowserContext())
 	defer tabCancel()
 	// Cancel the tab context (closing the tab) if the passed context is canceled.
 	context.AfterFunc(ctx, tabCancel)
