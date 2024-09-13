@@ -2,7 +2,7 @@ module github.com/chialab/print2pdf-go/plain
 
 go 1.22.5
 
-require github.com/chialab/print2pdf-go/print2pdf v0.3.0
+require github.com/chialab/print2pdf-go/print2pdf v0.3.1
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.30.5 // indirect
