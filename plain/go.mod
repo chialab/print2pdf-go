@@ -3,7 +3,7 @@ module github.com/chialab/print2pdf-go/plain
 go 1.22.5
 
 require (
-	github.com/chialab/print2pdf-go/print2pdf v0.3.1
+	github.com/chialab/print2pdf-go/print2pdf v0.4.0
 	github.com/prometheus/client_golang v1.20.3
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.55.0
 	go.opentelemetry.io/otel v1.30.0
