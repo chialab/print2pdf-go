@@ -6,5 +6,5 @@ sources:
   - https://github.com/chialab/print2pdf-go
 maintainers:
   - name: Chialab
-version: 0.3.1
-appVersion: "0.3.1"
+version: 0.4.0
+appVersion: "0.4.0"
