@@ -50,14 +50,15 @@ jobs:
 
       - name: Build
         env:
+          TAG: ${{ github.ref_name }}
           CGO_ENABLED: 0
         run: |
-          GOOS=linux GOARCH=amd64 go build -C ${{ matrix.module }} -ldflags '-s' -o ../build/print2pdf-${{ matrix.module }}-linux-amd64
-          GOOS=linux GOARCH=arm64 go build -C ${{ matrix.module }} -ldflags '-s' -o ../build/print2pdf-${{ matrix.module }}-linux-arm64
-          GOOS=darwin GOARCH=amd64 go build -C ${{ matrix.module }} -ldflags '-s' -o ../build/print2pdf-${{ matrix.module }}-darwin-amd64
-          GOOS=darwin GOARCH=arm64 go build -C ${{ matrix.module }} -ldflags '-s' -o ../build/print2pdf-${{ matrix.module }}-darwin-arm64
-          GOOS=windows GOARCH=amd64 go build -C ${{ matrix.module }} -ldflags '-s' -o ../build/print2pdf-${{ matrix.module }}-windows-amd64
-          GOOS=windows GOARCH=arm64 go build -C ${{ matrix.module }} -ldflags '-s' -o ../build/print2pdf-${{ matrix.module }}-windows-arm64
+          GOOS=linux GOARCH=amd64 go build -C ${{ matrix.module }} -ldflags "-s -X main.Version=${TAG#v}" -o ../build/print2pdf-${{ matrix.module }}-linux-amd64
+          GOOS=linux GOARCH=arm64 go build -C ${{ matrix.module }} -ldflags "-s -X main.Version=${TAG#v}" -o ../build/print2pdf-${{ matrix.module }}-linux-arm64
+          GOOS=darwin GOARCH=amd64 go build -C ${{ matrix.module }} -ldflags "-s -X main.Version=${TAG#v}" -o ../build/print2pdf-${{ matrix.module }}-darwin-amd64
+          GOOS=darwin GOARCH=arm64 go build -C ${{ matrix.module }} -ldflags "-s -X main.Version=${TAG#v}" -o ../build/print2pdf-${{ matrix.module }}-darwin-arm64
+          GOOS=windows GOARCH=amd64 go build -C ${{ matrix.module }} -ldflags "-s -X main.Version=${TAG#v}" -o ../build/print2pdf-${{ matrix.module }}-windows-amd64
+          GOOS=windows GOARCH=arm64 go build -C ${{ matrix.module }} -ldflags "-s -X main.Version=${TAG#v}" -o ../build/print2pdf-${{ matrix.module }}-windows-arm64
 
       - name: Release
         uses: softprops/action-gh-release@v2
@@ -111,10 +112,14 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v6
+        env:
+          TAG: ${{ github.ref_name }}
         with:
           context: ${{ matrix.module }}
           file: ${{ matrix.module }}/Dockerfile
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            VERSION=${TAG#v}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

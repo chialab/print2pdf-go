@@ -150,19 +150,14 @@ var ChromiumPath = os.Getenv("CHROMIUM_PATH")
 // Reference to browser context, initialized in init function of this package.
 var browserCtx context.Context
 
-// Init function checks for required environment variables.
-func init() {
-	if ChromiumPath == "" {
-		fmt.Fprintln(os.Stderr, "missing required environment variable CHROMIUM_PATH")
-		os.Exit(1)
-	}
-}
-
 // Allocate a browser to be reused by multiple invocations, to reduce startup time. Cancelling the context will close the browser.
 // This function must be called before starting to print PDFs.
 func StartBrowser(ctx context.Context) error {
 	if Running() {
 		return nil
+	}
+	if ChromiumPath == "" {
+		return fmt.Errorf("missing required environment variable CHROMIUM_PATH")
 	}
 
 	defer Elapsed("Browser startup")()
