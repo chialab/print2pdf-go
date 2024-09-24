@@ -202,10 +202,10 @@ func getPrintParams(data GetPDFParams) (page.PrintToPDFParams, error) {
 	params := page.PrintToPDFParams{
 		PrintBackground:         true,
 		Landscape:               false,
-		MarginTop:               0,
-		MarginBottom:            0,
-		MarginLeft:              0,
-		MarginRight:             0,
+		MarginTop:               0.4,
+		MarginBottom:            0.4,
+		MarginLeft:              0.4,
+		MarginRight:             0.4,
 		Scale:                   1,
 		GenerateDocumentOutline: false,
 	}
