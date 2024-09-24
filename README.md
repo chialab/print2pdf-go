@@ -32,9 +32,10 @@ for the supported methods of providing the credentials.
 
 Launch the binary to start the webserver at `http://localhost:3000`.
 
-The webserver provides three endpoints:
+The webserver provides these endpoints:
 - `/v1/print` stores the generated PDF in an AWS S3 bucket
 - `/v2/print` streams the generated PDF as the response
+- `/status` returns an empty response with status code 204 or 503, to be used as healthcheck
 - `/metrics` exports metrics in the Prometheus format
 
 Both endpoints accept `POST` requests with the following body parameters:
