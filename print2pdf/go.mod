@@ -1,6 +1,7 @@
 module github.com/chialab/print2pdf-go/print2pdf
 
 go 1.22.5
+toolchain go1.23.2
 
 retract [v0.1.0, v0.1.3] // Remove publication tests.
 
@@ -8,8 +9,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.27.37
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.23
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.63.1
-	github.com/chromedp/cdproto v0.0.0-20240919203636-12af5e8a671f
-	github.com/chromedp/chromedp v0.10.0
+	github.com/chromedp/cdproto v0.0.0-20241022234722-4d5d5faf59fb
+	github.com/chromedp/chromedp v0.11.1
 	github.com/google/uuid v1.6.0
 )
 
@@ -30,11 +31,11 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.27.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.31.1 // indirect
 	github.com/aws/smithy-go v1.21.0 // indirect
-	github.com/chromedp/sysutil v1.0.0 // indirect
+	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
 )
