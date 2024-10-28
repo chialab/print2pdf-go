@@ -22,6 +22,8 @@ updates:
         patterns: ['github.com/chialab/*']
       chromedp:
         patterns: ['github.com/chromedp/*']
+      open-telemetry:
+        patterns: ['go.opentelemetry.io/*', 'github.com/prometheus/*']
 
   # Maintain dependencies for Terraform module
   - package-ecosystem: "terraform"
