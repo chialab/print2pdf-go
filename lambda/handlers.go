@@ -13,7 +13,7 @@ import (
 )
 
 // Handle a request.
-func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {	
 	headers := map[string]string{"Content-Type": "application/json"}
 	if CorsAllowedHosts == "" || CorsAllowedHosts == "*" {
 		headers["Access-Control-Allow-Origin"] = "*"
@@ -28,7 +28,37 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 		}
 	}
 
+	// Read allowed cookie names
+    cookiesEnv := os.Getenv("COOKIES_TO_READ")
+    allowedCookies := make(map[string]struct{})
+    for _, name := range strings.Split(cookiesEnv, ",") {
+        allowedCookies[strings.TrimSpace(name)] = struct{}{}
+    }
+
 	var data print2pdf.GetPDFParams
+
+	cookieHeader, ok := event.Headers["Cookie"]
+    if ok {
+        cookiePairs := strings.Split(cookieHeader, ";")
+        for _, pair := range cookiePairs {
+            parts := strings.SplitN(strings.TrimSpace(pair), "=", 2)
+            if len(parts) == 2 {
+                name := strings.TrimSpace(parts[0])
+                value := strings.TrimSpace(parts[1])
+                if _, allowed := allowedCookies[name]; allowed {
+                    fmt.Printf("Adding cookie: %s = %s\n", name, value)
+                    Aggiungi il cookie alla mappa
+                    if data.Cookies == nil {
+                        data.Cookies = make(map[string]string)
+                    }
+                    data.Cookies[name] = value
+                }
+            }
+        }
+    } else {
+        fmt.Println("No 'Cookie' header found in request.")
+    }
+
 	err := json.Unmarshal([]byte(event.Body), &data)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error decoding JSON: %s\noriginal request body: %s\n", err, event.Body)

@@ -17,7 +17,11 @@ import (
 	"os"
 	"slices"
 	"strings"
-
+	"time"
+	"net/url"
+	
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/emulation"
 	chromedpio "github.com/chromedp/cdproto/io"
 	"github.com/chromedp/cdproto/page"
@@ -50,6 +54,8 @@ type GetPDFParams struct {
 	Margins *PrintMargins `json:"margin,omitempty"`
 	// Scale of the webpage rendering. Default is 1.
 	Scale float64 `json:"scale,omitempty"`
+	// Cookies to set before printing. Default is empty.
+	Cookies map[string]string `json:"cookies,omitempty"`
 }
 
 // Represents a print format's width and height, in inches.
@@ -282,7 +288,32 @@ func PrintPDF(ctx context.Context, data GetPDFParams, h PDFHandler) (string, err
 	interactiveReached := false
 	idleReached := false
 	res := ""
-	err = chromedp.Run(tabCtx, chromedp.Tasks{
+	err = chromedp.Run(tabCtx, chromedp.Tasks{		
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			defer Elapsed(fmt.Sprintf("Setting Cookies:", data.Cookies))()
+			
+			u, err := url.Parse(data.Url)
+    		if err != nil {
+        		return fmt.Errorf("Parsing URL error: %w", err)
+    		}
+			
+			for name, value := range data.Cookies {
+				expr := cdp.TimeSinceEpoch(time.Now().Add(180 * 24 * time.Hour))
+				
+				err := network.SetCookie(name, value).
+					WithExpires(&expr).					
+					WithDomain(u.Hostname()).
+					WithPath("/").
+					WithHTTPOnly(true).
+					WithSecure(false).
+					Do(ctx)
+				if err != nil {
+					return fmt.Errorf("failed to set cookie %s: %w", name, err)
+				}
+			}
+	
+			return nil
+		}),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			defer Elapsed(fmt.Sprintf("Navigate to %s", data.Url))()
 
