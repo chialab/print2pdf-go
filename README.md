@@ -8,6 +8,7 @@ A tool to print webpages as PDF files, powered by [chromedp](https://github.com/
 ## Go package
 
 Install with:
+
 ```shell
 go get github.com/chialab/print2pdf-go/print2pdf
 ```
@@ -21,10 +22,12 @@ The `plain` directory in this repository contains a minimal REST application. It
 binary for each [release](https://github.com/chialab/print2pdf-go/releases/latest).
 
 The following environmental variables can be used to configure the application:
+
 - `CHROMIUM_PATH` (**required**) full path to the Chromium binary
 - `BUCKET` (**required** by endpoint `/v1/print` and `lambda` application) name of the AWS S3 bucket where to store the generated PDF
 - `PORT` (**optional**, default to `3000`) port from which the `plain` application will be served
 - `CORS_ALLOWED_HOSTS` (**optional**, default to `*`) comma-separated list of allowed origins for pre-flight CORS requests
+- `COOKIES_TO_READ` (**optional**, default to ``) Comma-separated list of cookie names that must be forwarded from the incoming request to the Chromium browser.
 
 To use the `/v1/print` endpoint, credentials for the AWS account need to be configured in your environment to be able to store
 the generated PDF in AWS S3. See the [SDK documentation](https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/#specifying-credentials)
@@ -33,24 +36,26 @@ for the supported methods of providing the credentials.
 Launch the binary to start the webserver at `http://localhost:3000`.
 
 The webserver provides these endpoints:
+
 - `/v1/print` stores the generated PDF in an AWS S3 bucket
 - `/v2/print` streams the generated PDF as the response
 - `/status` returns an empty response with status code 204 or 503, to be used as healthcheck
 - `/metrics` exports metrics in the Prometheus format
 
 Both endpoints accept `POST` requests with the following body parameters:
+
 - `url` (**required**) the URL of the page to print as PDF
 - `file_name` (**required**) the filename of the exported PDF; the suffix `.pdf` can be omitted and will be
-                             automatically added if missing
+  automatically added if missing
 - `media` (**optional**) the media type to emulate when printing the PDF; can be either `print` or `screen`,
-                         default is `print`
+  default is `print`
 - `format` (**optional**) the printed PDF page format; can be one of `Letter`, `Legal`, `Tabloid`, `Ledger`, `A0`,
-                          `A1`, `A2`, `A3`, `A4`, `A5` or `A6`, default is `A4`
+  `A1`, `A2`, `A3`, `A4`, `A5` or `A6`, default is `A4`
 - `background` (**optional**) whether to print background graphics; can be either `true` or `false`, default is `true`
 - `layout` (**optional**) page orientation of the printed PDF; can be either `landscape` or `portrait`, default
-                          is `portrait`
+  is `portrait`
 - `margins` (**optional**) page margins of the printed PDF; is an object with four optional keys `top`, `bottom`,
-                           `left` and `right` expressed in inches as decimal numbers, the default for each one is 0
+  `left` and `right` expressed in inches as decimal numbers, the default for each one is 0
 - `scale` (**optional**) print scale; is a positive decimal number, default is 1 (meaning 100%)
 
 The `/v1/print` endpoint responds with a JSON object with the key `url` containing the URL to the file, while the `/v2/print`
@@ -72,11 +77,13 @@ To use it locally and in the cloud, see the docker image usage.
 Docker images for the `plain` and `lambda` applications are provided. They both come with Chromium pre-installed.
 
 The `plain` image can be used like this:
+
 ```shell
 docker run --rm -it -p '3000:3000' -e 'BUCKET=mybucket' -e 'CHROMIUM_PATH=/usr/bin/chromium' ghcr.io/chialab/print2pdf-go/plain:latest
 ```
 
 The `lambda` image can be used locally like this:
+
 ```shell
 docker run --rm -it -p '8080:8080' -e 'BUCKET=mybucket' -e 'CHROMIUM_PATH=/usr/bin/chromium' --entrypoint '/usr/local/bin/aws-lambda-rie' ghcr.io/chialab/print2pdf-go/lambda:latest "/app/print2pdf"
 ```
@@ -92,6 +99,7 @@ and used as value of a `body` parameter. Also, the actual endpoint to call is `h
 
 A Terraform module is provided in the `terraform` directory for convenience, it can be used to setup the AWS infrastructure
 needed to deploy the image as a Lambda function:
+
 ```terraform
 module "lambda" {
     source = "git::ssh://git@github.com:chialab/print2pdf-go.git//terraform"
@@ -106,6 +114,7 @@ module "lambda" {
 An Helm chart is provided in the `chart` directory for deploying the `plain` application in Kubernetes, and is distributed using GitHub's OCI container registry.
 
 The chart repo URL is `oci://ghcr.io/chialab/helm-charts/print2pdf-go`. Usage example:
+
 ```shell
 helm install example-release oci://ghcr.io/chialab/helm-charts/print2pdf-go --namespace example-ns --values example.yml --version ~0.1.0
 ```
