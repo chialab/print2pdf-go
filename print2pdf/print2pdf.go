@@ -14,16 +14,16 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"slices"
 	"strings"
 	"time"
-	"net/url"
-	
+
 	"github.com/chromedp/cdproto/cdp"
-	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/emulation"
 	chromedpio "github.com/chromedp/cdproto/io"
+	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 )
@@ -288,20 +288,20 @@ func PrintPDF(ctx context.Context, data GetPDFParams, h PDFHandler) (string, err
 	interactiveReached := false
 	idleReached := false
 	res := ""
-	err = chromedp.Run(tabCtx, chromedp.Tasks{		
+	err = chromedp.Run(tabCtx, chromedp.Tasks{
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			defer Elapsed(fmt.Sprintf("Setting Cookies:", data.Cookies))()
-			
+			defer Elapsed("Setting cookies")()
+
 			u, err := url.Parse(data.Url)
-    		if err != nil {
-        		return fmt.Errorf("Parsing URL error: %w", err)
-    		}
-			
+			if err != nil {
+				return fmt.Errorf("parsing URL error: %w", err)
+			}
+
 			for name, value := range data.Cookies {
 				expr := cdp.TimeSinceEpoch(time.Now().Add(180 * 24 * time.Hour))
-				
+
 				err := network.SetCookie(name, value).
-					WithExpires(&expr).					
+					WithExpires(&expr).
 					WithDomain(u.Hostname()).
 					WithPath("/").
 					WithHTTPOnly(true).
@@ -311,7 +311,7 @@ func PrintPDF(ctx context.Context, data GetPDFParams, h PDFHandler) (string, err
 					return fmt.Errorf("failed to set cookie %s: %w", name, err)
 				}
 			}
-	
+
 			return nil
 		}),
 		chromedp.ActionFunc(func(ctx context.Context) error {

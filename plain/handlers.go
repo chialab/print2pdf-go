@@ -168,15 +168,8 @@ func readRequest(r *http.Request) (print2pdf.GetPDFParams, error) {
 		data.FileName += ".pdf"
 	}
 
-	cookiesEnv := os.Getenv("COOKIES_TO_READ")
-    cookieNames := strings.Split(cookiesEnv, ",")
-    fmt.Printf("COOKIES_TO_READ: %s\n", cookieNames)
-
-    foundCookies := ExtractCookies(r, cookieNames)
-    
-    if len(foundCookies) > 0 {
-        data.Cookies = foundCookies
-    }
+	cookieNames := strings.Split(CookiesToRead, ",")
+	data.Cookies = ExtractCookies(r, cookieNames)
 
 	return data, nil
 }
@@ -214,7 +207,6 @@ func jsonError(w http.ResponseWriter, message string, code int) {
 	}
 }
 
-
 // ExtractCookies extracts cookies from the request matching the specified names.
 // Parameters:
 // - r: the incoming HTTP request
@@ -225,14 +217,14 @@ func ExtractCookies(r *http.Request, names []string) map[string]string {
 	// Create a lookup map for desired cookie names
 	wanted := make(map[string]bool)
 	for _, name := range names {
-		wanted[strings.TrimSpace(name)] = true
+		wanted[strings.ToLower(strings.TrimSpace(name))] = true
 	}
-	
+
 	// Collect found cookies
 	found := make(map[string]string)
 	for _, c := range r.Cookies() {
-		if wanted[c.Name] {
-			found[c.Name] = c.Value
+		if wanted[strings.ToLower(c.Name)] {
+			found[strings.ToLower(c.Name)] = c.Value
 		}
 	}
 
