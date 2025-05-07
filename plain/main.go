@@ -42,6 +42,9 @@ var Port = os.Getenv("PORT")
 // Comma-separated list of allowed hosts for CORS requests. Defaults to "*", meaning all hosts.
 var CorsAllowedHosts = os.Getenv("CORS_ALLOWED_HOSTS")
 
+// Comma-separated list of cookies to forward when navigating to the URL to be printed.
+var CookiesToRead = os.Getenv("COOKIES_TO_READ")
+
 // Function to shutdown OpenTelemetry.
 var otelShutdown func(context.Context) error
 

@@ -31,6 +31,9 @@ var BucketName = os.Getenv("BUCKET")
 // Comma-separated list of allowed hosts for CORS requests. Defaults to "*", meaning all hosts.
 var CorsAllowedHosts = os.Getenv("CORS_ALLOWED_HOSTS")
 
+// Comma-separated list of cookies to forward when navigating to the URL to be printed.
+var CookiesToRead = os.Getenv("COOKIES_TO_READ")
+
 // Init function checks for required environment variables.
 func init() {
 	if len(os.Args) > 1 && slices.Contains([]string{"-v", "--version"}, os.Args[1]) {

@@ -28,7 +28,33 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 		}
 	}
 
+	// Read allowed cookie names
+	allowedCookies := make(map[string]struct{})
+	for _, name := range strings.Split(CookiesToRead, ",") {
+		allowedCookies[strings.ToLower(strings.TrimSpace(name))] = struct{}{}
+	}
+
 	var data print2pdf.GetPDFParams
+
+	if cookieHeader, ok := event.Headers["Cookie"]; ok {
+		data.Cookies = make(map[string]string)
+		cookiePairs := strings.Split(cookieHeader, ";")
+		for _, pair := range cookiePairs {
+			name, value, found := strings.Cut(strings.TrimSpace(pair), "=")
+			if !found {
+				continue
+			}
+
+			name = strings.ToLower(strings.TrimSpace(name))
+			value = strings.TrimSpace(value)
+			if _, allowed := allowedCookies[name]; allowed {
+				data.Cookies[name] = value
+			}
+		}
+	} else {
+		fmt.Println("No 'Cookie' header found in request.")
+	}
+
 	err := json.Unmarshal([]byte(event.Body), &data)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error decoding JSON: %s\noriginal request body: %s\n", err, event.Body)
