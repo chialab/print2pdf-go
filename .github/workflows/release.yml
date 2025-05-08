@@ -9,7 +9,7 @@ jobs:
     name: Release GO package
     if: ${{ startsWith(github.ref_name, 'print2pdf/v') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    timeout-minutes: 5
+    timeout-minutes: 15
     strategy:
       matrix:
         module: ['plain', 'lambda']
@@ -77,7 +77,7 @@ jobs:
     name: Build and release containers
     if: ${{ startsWith(github.ref_name, 'v') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     strategy:
       matrix:
         module: ['plain', 'lambda']
