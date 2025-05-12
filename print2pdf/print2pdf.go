@@ -14,6 +14,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"maps"
 	"net/url"
 	"os"
 	"slices"
@@ -290,7 +291,7 @@ func PrintPDF(ctx context.Context, data GetPDFParams, h PDFHandler) (string, err
 	res := ""
 	err = chromedp.Run(tabCtx, chromedp.Tasks{
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			defer Elapsed("Setting cookies")()
+			defer Elapsed(fmt.Sprintf("Forward cookies (%s)", slices.Collect(maps.Keys(data.Cookies))))()
 
 			u, err := url.Parse(data.Url)
 			if err != nil {
