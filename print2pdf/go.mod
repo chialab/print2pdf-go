@@ -1,6 +1,6 @@
 module github.com/chialab/print2pdf-go/print2pdf
 
-go 1.22.5
+go 1.24.3
 
 retract [v0.1.0, v0.1.3] // Remove publication tests.
 

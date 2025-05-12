@@ -1,6 +1,6 @@
 module github.com/chialab/print2pdf-go/lambda
 
-go 1.22.5
+go 1.24.3
 
 require (
 	github.com/aws/aws-lambda-go v1.47.0
