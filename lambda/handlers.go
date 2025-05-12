@@ -87,7 +87,7 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 // matchSlice checks if a string matches any one pattern in a list, case insensitive.
 func matchSlice(patterns []string, s string) (bool, error) {
 	for _, pattern := range patterns {
-		pattern = strings.ReplaceAll(regexp.QuoteMeta(strings.ToLower(pattern)), "*", "\\.*")
+		pattern = fmt.Sprintf("^%s$", strings.ReplaceAll(regexp.QuoteMeta(strings.ToLower(pattern)), "\\*", ".*"))
 		if matched, err := regexp.MatchString(pattern, strings.ToLower(s)); err != nil {
 			return false, err
 		} else if matched {
@@ -125,7 +125,7 @@ func checkPrintIsAllowed(u string) error {
 		return err
 	}
 
-	checkUrl := fmt.Sprintf("%s//%s", parsedUrl.Scheme, parsedUrl.Host)
+	checkUrl := fmt.Sprintf("%s://%s", parsedUrl.Scheme, parsedUrl.Host)
 	allowedHosts := strings.Split(PrintAllowedHosts, ",")
 	if matched, err := matchSlice(allowedHosts, checkUrl); err != nil {
 		return err
