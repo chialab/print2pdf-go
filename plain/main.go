@@ -43,7 +43,10 @@ var Port = os.Getenv("PORT")
 var CorsAllowedHosts = os.Getenv("CORS_ALLOWED_HOSTS")
 
 // Comma-separated list of cookies to forward when navigating to the URL to be printed.
-var CookiesToRead = os.Getenv("COOKIES_TO_READ")
+var ForwardCookies = os.Getenv("FORWARD_COOKIES")
+
+// Comma-separated list of hosts for which printing is allowed.
+var PrintAllowedHosts = os.Getenv("PRINT_ALLOWED_HOSTS")
 
 // Function to shutdown OpenTelemetry.
 var otelShutdown func(context.Context) error
