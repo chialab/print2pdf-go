@@ -54,8 +54,8 @@ type GetPDFParams struct {
 	Margins *PrintMargins `json:"margin,omitempty"`
 	// Scale of the webpage rendering. Default is 1.
 	Scale float64 `json:"scale,omitempty"`
-	// Cookies to set before printing. Default is empty.
-	Cookies map[string]string `json:"cookies,omitempty"`
+	// Cookies forwarded from request to URL. Default is empty.
+	Cookies map[string]string `json:"-"`
 }
 
 // Represents a print format's width and height, in inches.

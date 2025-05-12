@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
-	"slices"
+	"regexp"
 	"strings"
 
 	"github.com/chialab/print2pdf-go/print2pdf"
@@ -70,18 +71,42 @@ func printV2Handler(w http.ResponseWriter, r *http.Request) {
 func handlePrintOptions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,POST")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	writeCorsOriginHeader(w, r.Header.Get("Origin"))
+	origin := r.Header.Get("Origin")
+	if allowOrigin, err := getCorsOriginHeader(origin); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		jsonError(w, "internal server error", http.StatusInternalServerError)
+
+		return
+	} else if allowOrigin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
 // Handle POST requests to "/v1/print" endpoint.
 func handlePrintV1Post(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	writeCorsOriginHeader(w, r.Header.Get("Origin"))
+	origin := r.Header.Get("Origin")
+	if allowOrigin, err := getCorsOriginHeader(origin); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		jsonError(w, "internal server error", http.StatusInternalServerError)
+
+		return
+	} else if allowOrigin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
+	}
+
 	data, err := readRequest(r)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		jsonError(w, "internal server error", http.StatusInternalServerError)
+
+		return
+	}
+	if err := checkPrintIsAllowed(data.Url); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		jsonError(w, "URL is not allowed", http.StatusForbidden)
 
 		return
 	}
@@ -128,11 +153,26 @@ func handlePrintV1Post(w http.ResponseWriter, r *http.Request) {
 // Handle POST requests to "/v2/print" endpoint.
 func handlePrintV2Post(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/pdf")
-	writeCorsOriginHeader(w, r.Header.Get("Origin"))
+	origin := r.Header.Get("Origin")
+	if allowOrigin, err := getCorsOriginHeader(origin); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		jsonError(w, "internal server error", http.StatusInternalServerError)
+
+		return
+	} else if allowOrigin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
+	}
+
 	data, err := readRequest(r)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		jsonError(w, "internal server error", http.StatusInternalServerError)
+
+		return
+	}
+	if err := checkPrintIsAllowed(data.Url); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		jsonError(w, "URL is not allowed", http.StatusForbidden)
 
 		return
 	}
@@ -163,27 +203,89 @@ func readRequest(r *http.Request) (print2pdf.GetPDFParams, error) {
 	if err != nil {
 		return print2pdf.GetPDFParams{}, fmt.Errorf("error decoding JSON: %s\noriginal request body: %s", err, string(body))
 	}
-
 	if !strings.HasSuffix(data.FileName, ".pdf") {
 		data.FileName += ".pdf"
 	}
 
-	cookieNames := strings.Split(CookiesToRead, ",")
-	data.Cookies = ExtractCookies(r, cookieNames)
+	data.Cookies = extractCookies(r.Cookies())
 
 	return data, nil
 }
 
-// Write the "Access-Control-Allow-Origin" header.
-func writeCorsOriginHeader(w http.ResponseWriter, origin string) {
-	if CorsAllowedHosts == "" || CorsAllowedHosts == "*" {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-	} else {
-		allowedHosts := strings.Split(CorsAllowedHosts, ",")
-		if slices.Contains(allowedHosts, origin) {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
+// matchSlice checks if a string matches any one pattern in a list, case insensitive.
+func matchSlice(patterns []string, s string) (bool, error) {
+	for _, pattern := range patterns {
+		pattern = strings.ReplaceAll(regexp.QuoteMeta(strings.ToLower(pattern)), "*", "\\.*")
+		if matched, err := regexp.MatchString(pattern, strings.ToLower(s)); err != nil {
+			return false, err
+		} else if matched {
+			return true, nil
 		}
 	}
+
+	return false, nil
+}
+
+// getCorsOriginHeader gets the value for the CORS allow-origin header.
+func getCorsOriginHeader(origin string) (string, error) {
+	if CorsAllowedHosts == "" || CorsAllowedHosts == "*" {
+		return "*", nil
+	}
+
+	allowedHosts := strings.Split(CorsAllowedHosts, ",")
+	if matched, err := matchSlice(allowedHosts, origin); err != nil {
+		return "", err
+	} else if matched {
+		return origin, nil
+	}
+
+	return "", nil
+}
+
+// checkPrintIsAllowed checks that printing the URL is allowed.
+func checkPrintIsAllowed(u string) error {
+	if PrintAllowedHosts == "" || PrintAllowedHosts == "*" {
+		return nil
+	}
+
+	parsedUrl, err := url.Parse(u)
+	if err != nil {
+		return err
+	}
+
+	checkUrl := fmt.Sprintf("%s//%s", parsedUrl.Scheme, parsedUrl.Host)
+	allowedHosts := strings.Split(PrintAllowedHosts, ",")
+	if matched, err := matchSlice(allowedHosts, checkUrl); err != nil {
+		return err
+	} else if !matched {
+		return fmt.Errorf("requested URL %s is not allowed for printing", u)
+	}
+
+	return nil
+}
+
+// extractCookies extracts cookies from the request matching the specified names.
+// Parameters:
+// - cookies: the request cookies
+// Returns:
+// - a map with cookie names as keys and their values as map values
+func extractCookies(cookies []*http.Cookie) map[string]string {
+	// Create a lookup map for desired cookie names
+	names := strings.Split(ForwardCookies, ",")
+	wanted := make(map[string]bool)
+	for _, name := range names {
+		wanted[strings.TrimSpace(name)] = true
+	}
+
+	// Collect found cookies
+	found := make(map[string]string)
+	for _, c := range cookies {
+		if wanted[c.Name] {
+			found[c.Name] = c.Value
+		}
+	}
+
+	return found
 }
 
 // jsonError replies to the request with the specified error message and HTTP code.
@@ -205,28 +307,4 @@ func jsonError(w http.ResponseWriter, message string, code int) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error writing error response: %s\noriginal response: %s\n", err, string(body))
 	}
-}
-
-// ExtractCookies extracts cookies from the request matching the specified names.
-// Parameters:
-// - r: the incoming HTTP request
-// - names: list of cookie names to extract
-// Returns:
-// - a map with cookie names as keys and their values as map values
-func ExtractCookies(r *http.Request, names []string) map[string]string {
-	// Create a lookup map for desired cookie names
-	wanted := make(map[string]bool)
-	for _, name := range names {
-		wanted[strings.ToLower(strings.TrimSpace(name))] = true
-	}
-
-	// Collect found cookies
-	found := make(map[string]string)
-	for _, c := range r.Cookies() {
-		if wanted[strings.ToLower(c.Name)] {
-			found[strings.ToLower(c.Name)] = c.Value
-		}
-	}
-
-	return found
 }

@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
-	"slices"
+	"regexp"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -15,46 +16,19 @@ import (
 // Handle a request.
 func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	headers := map[string]string{"Content-Type": "application/json"}
-	if CorsAllowedHosts == "" || CorsAllowedHosts == "*" {
-		headers["Access-Control-Allow-Origin"] = "*"
-	} else {
-		allowedHosts := strings.Split(CorsAllowedHosts, ",")
-		origin := event.Headers["Origin"]
-		if origin == "" {
-			origin = event.Headers["origin"]
-		}
-		if slices.Contains(allowedHosts, origin) {
-			headers["Access-Control-Allow-Origin"] = origin
-		}
+	origin, ok := event.Headers["Origin"]
+	if !ok {
+		origin = event.Headers["origin"]
 	}
+	if allowOrigin, err := getCorsOriginHeader(origin); err != nil {
+		fmt.Fprintf(os.Stderr, "error getting CORS allow-origin header value: %s\n", err)
 
-	// Read allowed cookie names
-	allowedCookies := make(map[string]struct{})
-	for _, name := range strings.Split(CookiesToRead, ",") {
-		allowedCookies[strings.ToLower(strings.TrimSpace(name))] = struct{}{}
+		return jsonError("internal server error", 500), nil
+	} else if allowOrigin != "" {
+		headers["Access-Control-Allow-Origin"] = origin
 	}
 
 	var data print2pdf.GetPDFParams
-
-	if cookieHeader, ok := event.Headers["Cookie"]; ok {
-		data.Cookies = make(map[string]string)
-		cookiePairs := strings.Split(cookieHeader, ";")
-		for _, pair := range cookiePairs {
-			name, value, found := strings.Cut(strings.TrimSpace(pair), "=")
-			if !found {
-				continue
-			}
-
-			name = strings.ToLower(strings.TrimSpace(name))
-			value = strings.TrimSpace(value)
-			if _, allowed := allowedCookies[name]; allowed {
-				data.Cookies[name] = value
-			}
-		}
-	} else {
-		fmt.Println("No 'Cookie' header found in request.")
-	}
-
 	err := json.Unmarshal([]byte(event.Body), &data)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error decoding JSON: %s\noriginal request body: %s\n", err, event.Body)
@@ -64,7 +38,20 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 	if !strings.HasSuffix(data.FileName, ".pdf") {
 		data.FileName += ".pdf"
 	}
+	if err := checkPrintIsAllowed(data.Url); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
 
+		return jsonError("URL is not allowed", 403), nil
+	}
+
+	cookieHeader, ok := event.Headers["Cookie"]
+	if !ok {
+		cookieHeader, ok = event.Headers["cookie"]
+	}
+	if ok {
+		cookies := strings.Split(cookieHeader, ";")
+		data.Cookies = extractCookies(cookies)
+	}
 	h, err := print2pdf.NewS3Handler(ctx, BucketName, data.FileName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error creating print handler: %s\n", err)
@@ -95,6 +82,88 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 		Body:       string(body),
 		Headers:    headers,
 	}, nil
+}
+
+// matchSlice checks if a string matches any one pattern in a list, case insensitive.
+func matchSlice(patterns []string, s string) (bool, error) {
+	for _, pattern := range patterns {
+		pattern = strings.ReplaceAll(regexp.QuoteMeta(strings.ToLower(pattern)), "*", "\\.*")
+		if matched, err := regexp.MatchString(pattern, strings.ToLower(s)); err != nil {
+			return false, err
+		} else if matched {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// getCorsOriginHeader gets the value for the CORS allow-origin header.
+func getCorsOriginHeader(origin string) (string, error) {
+	if CorsAllowedHosts == "" || CorsAllowedHosts == "*" {
+		return "*", nil
+	}
+
+	allowedHosts := strings.Split(CorsAllowedHosts, ",")
+	if matched, err := matchSlice(allowedHosts, origin); err != nil {
+		return "", err
+	} else if matched {
+		return origin, nil
+	}
+
+	return "", nil
+}
+
+// checkPrintIsAllowed checks that printing the URL is allowed.
+func checkPrintIsAllowed(u string) error {
+	if PrintAllowedHosts == "" || PrintAllowedHosts == "*" {
+		return nil
+	}
+
+	parsedUrl, err := url.Parse(u)
+	if err != nil {
+		return err
+	}
+
+	checkUrl := fmt.Sprintf("%s//%s", parsedUrl.Scheme, parsedUrl.Host)
+	allowedHosts := strings.Split(PrintAllowedHosts, ",")
+	if matched, err := matchSlice(allowedHosts, checkUrl); err != nil {
+		return err
+	} else if !matched {
+		return fmt.Errorf("requested URL %s is not allowed for printing", u)
+	}
+
+	return nil
+}
+
+// extractCookies extracts cookies from the request matching the specified names.
+// Parameters:
+// - cookies: the request cookies
+// Returns:
+// - a map with cookie names as keys and their values as map values
+func extractCookies(cookies []string) map[string]string {
+	// Create a lookup map for desired cookie names
+	names := strings.Split(ForwardCookies, ",")
+	wanted := make(map[string]bool)
+	for _, name := range names {
+		wanted[strings.TrimSpace(name)] = true
+	}
+
+	// Collect found cookies
+	forward := make(map[string]string)
+	for _, cookie := range cookies {
+		name, value, found := strings.Cut(strings.TrimSpace(cookie), "=")
+		if !found {
+			continue
+		}
+
+		name = strings.TrimSpace(name)
+		if wanted[name] {
+			forward[name] = strings.TrimSpace(value)
+		}
+	}
+
+	return forward
 }
 
 // Prepare an HTTP error response.
