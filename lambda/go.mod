@@ -4,7 +4,7 @@ go 1.24.3
 
 require (
 	github.com/aws/aws-lambda-go v1.47.0
-	github.com/chialab/print2pdf-go/print2pdf v0.5.0
+	github.com/chialab/print2pdf-go/print2pdf v0.5.1
 )
 
 require (
