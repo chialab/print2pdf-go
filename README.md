@@ -27,7 +27,8 @@ The following environmental variables can be used to configure the application:
 - `BUCKET` (**required** by endpoint `/v1/print` and `lambda` application) name of the AWS S3 bucket where to store the generated PDF
 - `PORT` (**optional**, default to `3000`) port from which the `plain` application will be served
 - `CORS_ALLOWED_HOSTS` (**optional**, default to `*`) comma-separated list of allowed origins for pre-flight CORS requests
-- `COOKIES_TO_READ` (**optional**, default to ``) Comma-separated list of cookie names that must be forwarded from the incoming request to the Chromium browser.
+- `FORWARD_COOKIES` (**optional**, default to `""`) comma-separated list of cookie names that must be forwarded from the incoming request to the Chromium browser
+- `PRINT_ALLOWED_HOSTS` (**optional**, default to `""`) comma-separated list of hosts for which printing is allowed
 
 To use the `/v1/print` endpoint, credentials for the AWS account need to be configured in your environment to be able to store
 the generated PDF in AWS S3. See the [SDK documentation](https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/#specifying-credentials)
