@@ -16,6 +16,18 @@ variable "cors_allowed_origins" {
   default     = "*"
 }
 
+variable "forward_cookies" {
+  description = "Comma-separated list of cookies to forward when navigating to the URL to be printed."
+  type = string
+  default = ""
+}
+
+variable "print_allowed_hosts" {
+  description = "Comma-separated list of hosts for which printing is allowed."
+  type = string
+  default = ""
+}
+
 variable "objects_expiration_days" {
   description = "Lifetime of objects stored in S3."
   type        = number

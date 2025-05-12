@@ -171,8 +171,10 @@ resource "aws_lambda_function" "default" {
 
   environment {
     variables = {
-      BUCKET             = aws_s3_bucket.default.bucket
-      CORS_ALLOWED_HOSTS = var.cors_allowed_origins
+      BUCKET              = aws_s3_bucket.default.bucket
+      CORS_ALLOWED_HOSTS  = var.cors_allowed_origins
+      FORWARD_COOKIES     = var.forward_cookies
+      PRINT_ALLOWED_HOSTS = var.print_allowed_hosts
     }
   }
 }
