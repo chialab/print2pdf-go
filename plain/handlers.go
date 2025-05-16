@@ -71,6 +71,7 @@ func printV2Handler(w http.ResponseWriter, r *http.Request) {
 func handlePrintOptions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "OPTIONS,POST")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	origin := r.Header.Get("Origin")
 	if allowOrigin, err := getCorsOriginHeader(origin); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
