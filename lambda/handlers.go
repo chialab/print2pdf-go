@@ -25,6 +25,9 @@ func handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.A
 
 		return jsonError("internal server error", 500), nil
 	} else if allowOrigin != "" {
+		headers["Access-Control-Allow-Methods"] = "OPTIONS,POST"
+		headers["Access-Control-Allow-Headers"] = "Content-Type"
+		headers["Access-Control-Allow-Credentials"] = "true"
 		headers["Access-Control-Allow-Origin"] = origin
 	}
 
