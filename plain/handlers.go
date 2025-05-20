@@ -79,6 +79,7 @@ func handlePrintOptions(w http.ResponseWriter, r *http.Request) {
 
 		return
 	} else if allowOrigin != "" {
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
 	}
 
@@ -161,6 +162,7 @@ func handlePrintV2Post(w http.ResponseWriter, r *http.Request) {
 
 		return
 	} else if allowOrigin != "" {
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
 	}
 
