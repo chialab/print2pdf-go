@@ -18,14 +18,14 @@ variable "cors_allowed_origins" {
 
 variable "forward_cookies" {
   description = "Comma-separated list of cookies to forward when navigating to the URL to be printed."
-  type = string
-  default = ""
+  type        = string
+  default     = ""
 }
 
 variable "print_allowed_hosts" {
   description = "Comma-separated list of hosts for which printing is allowed."
-  type = string
-  default = ""
+  type        = string
+  default     = ""
 }
 
 variable "objects_expiration_days" {

@@ -3,7 +3,7 @@ data "aws_partition" "current" {}
 ###
 # Bucket
 ###
-#tfsec:ignore:enable-bucket-encryption tfsec:ignore:encryption-customer-key tfsec:ignore:enable-bucket-logging
+#tfsec:ignore:enable-bucket-encryption tfsec:ignore:encryption-customer-key tfsec:ignore:enable-bucket-logging tfsec:ignore:s3-bucket-logging
 resource "aws_s3_bucket" "default" {
   bucket_prefix = "${var.name}-"
 }
