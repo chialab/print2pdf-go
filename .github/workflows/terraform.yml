@@ -5,10 +5,12 @@ on:
     branches: [ main ]
     paths:
       - 'terraform/**'
+      - '.github/workflows/*'
   pull_request:
     branches: [ main ]
     paths:
       - 'terraform/**'
+      - '.github/workflows/*'
 
 jobs:
   format:

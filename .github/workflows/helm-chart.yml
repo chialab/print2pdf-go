@@ -4,11 +4,13 @@ on:
   push:
     branches: [ main ]
     paths:
-    - 'chart/**'
+      - 'chart/**'
+      - '.github/workflows/*'
   pull_request:
     branches: [ main ]
     paths:
-    - 'chart/**'
+      - 'chart/**'
+      - '.github/workflows/*'
 
 jobs:
   lint:
