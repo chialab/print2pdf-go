@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: ['1.29.8', '1.30.4', '1.31.0']
+        version: ['1.32.11', '1.33.7', '1.34.3', '1.35.0']
 
     steps:
       - name: Checkout
@@ -42,10 +42,10 @@ jobs:
         uses: azure/setup-helm@v4
 
       - name: Install plugin
-        run: helm plugin install https://github.com/jtyr/kubeconform-helm
+        run: helm plugin install --verify=false https://github.com/jtyr/kubeconform-helm
       
       - name: Validate
-        run: helm kubeconform --summary -f .github/values.yml chart
+        run: helm kubeconform --summary --kube-version "${{ matrix.version }}" -f .github/values.yml chart
 
   version-bump:
     name: Check version bump
