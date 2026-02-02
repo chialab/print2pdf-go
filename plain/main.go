@@ -116,15 +116,10 @@ func run() (err error) {
 // Create an HTTP handler instrumented by OpenTelemetry.
 func newHTTPHandler() http.Handler {
 	mux := http.NewServeMux()
-	handleFunc := func(pattern string, handlerFunc func(http.ResponseWriter, *http.Request)) {
-		// Configure the "http.route" for the HTTP instrumentation.
-		handler := otelhttp.WithRouteTag(pattern, http.HandlerFunc(handlerFunc))
-		mux.Handle(pattern, handler)
-	}
-	handleFunc("/status", statusHandler)
-	handleFunc("/v1/print", printV1Handler)
-	handleFunc("/v2/print", printV2Handler)
-	mux.Handle("/metrics", otelhttp.WithRouteTag("/metrics", promhttp.Handler()))
+	mux.Handle("/status", http.HandlerFunc(statusHandler))
+	mux.Handle("/v1/print", http.HandlerFunc(printV1Handler))
+	mux.Handle("/v2/print", http.HandlerFunc(printV2Handler))
+	mux.Handle("/metrics", promhttp.Handler())
 
 	return otelhttp.NewHandler(mux, "/")
 }
