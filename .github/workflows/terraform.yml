@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
 
       - name: Formatter
         run: terraform -chdir=terraform fmt -check -diff
@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
 
       - name: Initialize
         run: terraform -chdir=terraform init -upgrade -backend=false
