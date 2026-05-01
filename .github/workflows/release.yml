@@ -61,7 +61,7 @@ jobs:
           GOOS=windows GOARCH=arm64 go build -C ${{ matrix.module }} -ldflags "-s -X main.Version=${TAG#v}" -o ../build/print2pdf-${{ matrix.module }}-windows-arm64
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           make_latest: true
           generate_release_notes: true
